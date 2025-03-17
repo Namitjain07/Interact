@@ -31,6 +31,7 @@ jobs:
         run: |
           echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
           echo "auth_token=${{ secrets.AUTH_TOKEN }}" >> local.properties
+          echo "auth_url=${{ secrets.AUTH_URL }}" >> local.properties
 
       - name: Verify local.properties
         run: cat local.properties
