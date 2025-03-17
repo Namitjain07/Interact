@@ -1,0 +1,84 @@
+package com.interact.interact.fragment
+
+import android.content.Intent
+import android.os.Bundle
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
+import android.widget.Button
+import android.widget.EditText
+import android.widget.Toast
+import androidx.fragment.app.Fragment
+import com.google.android.material.snackbar.Snackbar
+import com.interact.interact.activity.CreateOrJoinActivity
+import com.interact.interact.activity.OneToOneCallActivity
+import com.interact.interact.R
+import com.interact.interact.utils.HelperClass
+import com.interact.interact.utils.NetworkUtils
+import com.interact.interact.listener.ResponseListener
+
+class CreateMeetingFragment : Fragment() {
+
+    override fun onCreateView(
+        inflater: LayoutInflater, container: ViewGroup?,
+        savedInstanceState: Bundle?
+    ): View? {
+        val view = inflater.inflate(R.layout.fragment_create_meeting, container, false)
+        val etName = view.findViewById<EditText>(R.id.etName)
+        val btnJoin = view.findViewById<Button>(R.id.btnJoin)
+
+
+
+
+
+
+        btnJoin.setOnClickListener { v: View? ->
+            if ("" == etName.text.toString()) {
+                Toast.makeText(context, "Please Enter Name", Toast.LENGTH_SHORT).show()
+            } else {
+                val networkUtils = NetworkUtils(context)
+                if (networkUtils.isNetworkAvailable()) {
+                    networkUtils.getToken(object : ResponseListener<String> {
+                        override fun onResponse(token: String?) {
+                            networkUtils.createMeeting(token, object : ResponseListener<String> {
+                                override fun onResponse(meetingId: String?) {
+                                    var intent: Intent? = null
+                                    intent = Intent(
+                                        activity as CreateOrJoinActivity?,
+                                        OneToOneCallActivity::class.java
+                                    )
+                                    intent.putExtra("token", token)
+                                    intent.putExtra("meetingId", meetingId)
+                                    intent.putExtra(
+                                        "webcamEnabled",
+                                        (activity as CreateOrJoinActivity?)!!.isWebcamEnabled
+                                    )
+                                    intent.putExtra(
+                                        "micEnabled",
+                                        (activity as CreateOrJoinActivity?)!!.isMicEnabled
+                                    )
+                                    intent.putExtra(
+                                        "participantName",
+                                        etName.text.toString().trim { it <= ' ' })
+                                    startActivity(intent)
+                                    (activity as CreateOrJoinActivity?)!!.finish()
+                                }
+                            })
+                        }
+
+                    })
+                } else {
+                    val snackbar = Snackbar.make(
+                        view.findViewById(R.id.createMeetingLayout),
+                        "No Internet Connection",
+                        Snackbar.LENGTH_LONG
+                    )
+                    HelperClass.setSnackBarStyle(snackbar.view, 0)
+                    snackbar.show()
+                }
+            }
+        }
+
+        return view
+    }
+}
