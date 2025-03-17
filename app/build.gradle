@@ -21,6 +21,7 @@ android {
     buildTypes {
         debug{
             buildConfigField("String", "AUTH_TOKEN", "\"" + localProperties['auth_token'] + "\"")
+            buildConfigField("String", "AUTH_URL", "\"" + localProperties['auth_url'] + "\"")
 
         }
         release {
@@ -28,6 +29,7 @@ android {
             proguardFiles getDefaultProguardFile('proguard-android-optimize.txt'), 'proguard-rules.pro'
 
             buildConfigField("String", "AUTH_TOKEN", "\"" + localProperties['auth_token'] + "\"")
+            buildConfigField("String", "AUTH_URL", "\"" + "\"")
 
         }
     }
