@@ -22,19 +22,22 @@ jobs:
           distribution: 'temurin'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@af1da67850ed9a4cedd57bfd976089dd991e2582
-
-      - name: Check ANDROID_SDK_ROOT
-        run: echo "ANDROID_SDK_ROOT=$ANDROID_SDK_ROOT"
+        uses: gradle/actions/setup-gradle@v4
 
       - name: Create local.properties file
         run: |
-          echo "sdk.dir=$ANDROID_SDK_ROOT" > local.properties
-          echo "auth_token=${{ secrets.AUTH_TOKEN }}" >> local.properties
-          echo "auth_url=${{ secrets.AUTH_URL }}" >> local.properties
+          echo "sdk.dir=$ANDROID_SDK_ROOT" > $GITHUB_WORKSPACE/local.properties
+          echo "auth_token=${{ secrets.AUTH_TOKEN }}" >> $GITHUB_WORKSPACE/local.properties
 
       - name: Verify local.properties
-        run: cat local.properties
+        run: cat $GITHUB_WORKSPACE/local.properties
+
+      - name: Check if local.properties exists
+        run: |
+          if [ ! -f $GITHUB_WORKSPACE/local.properties ]; then
+            echo "Error: local.properties file is missing!"
+            exit 1
+          fi
 
       - name: Set executable permission for Gradle wrapper
         run: chmod +x ./gradlew
@@ -57,4 +60,4 @@ jobs:
           distribution: 'temurin'
 
       - name: Generate and submit dependency graph
-        uses: gradle/actions/dependency-submission@af1da67850ed9a4cedd57bfd976089dd991e2582
+        uses: gradle/actions/dependency-submission@v4
