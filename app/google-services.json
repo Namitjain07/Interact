@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "520591379611",
+    "project_id": "video-conference-d603e",
+    "storage_bucket": "video-conference-d603e.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:520591379611:android:8dfd0c4218f3f1a8ffca3e",
+        "android_client_info": {
+          "package_name": "com.mc.video_conference"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyA-SKw7rvmaphiNQMA7YxNiD_FBJViHDQM"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
