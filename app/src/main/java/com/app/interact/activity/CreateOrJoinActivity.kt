@@ -8,10 +8,10 @@ import android.content.res.ColorStateList
 import android.graphics.Color
 import android.os.Bundle
 import android.util.Log
-import android.view.Menu
 import android.view.MenuItem
 import android.view.View
 import android.view.WindowManager
+import android.widget.ImageButton
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -53,15 +53,14 @@ class CreateOrJoinActivity : AppCompatActivity() {
     private var toolbar: Toolbar? = null
     private var actionBar: ActionBar? = null
     private var videoTrack: CustomStreamTrack? = null
+    private var btnSwitchCamera: ImageButton? = null
+    private var btnAudioOptions: ImageButton? = null
     private var videoCapturer: VideoCapturer? = null
     private var initializationOptions: InitializationOptions? = null
     private var peerConnectionFactory: PeerConnectionFactory? = null
 
-
-
     private var videoSource: VideoSource? = null
     var permissionsGranted = false
-    lateinit var optionsMenu: Menu
     private val permissionHandler: com.nabinbhandari.android.permissions.PermissionHandler = object : com.nabinbhandari.android.permissions.PermissionHandler() {
         override fun onGranted() {
         }
@@ -81,10 +80,7 @@ class CreateOrJoinActivity : AppCompatActivity() {
             ).show()
             return super.onBlocked(context, blockedList)
         }
-
-
     }
-
 
     private val permissionHandlerSDK: PermissionHandler = object : PermissionHandler() {
         override fun onGranted() {
@@ -144,6 +140,24 @@ class CreateOrJoinActivity : AppCompatActivity() {
         btnWebcam = findViewById(R.id.btnWebcam)
         joinView = findViewById(R.id.joiningView)
         cameraOffText = findViewById(R.id.cameraoff)
+
+        // Add camera and audio buttons to the toolbar
+        btnSwitchCamera = ImageButton(this)
+        btnSwitchCamera!!.setImageResource(R.drawable.baseline_flip_camera_android_24)
+        btnSwitchCamera!!.setBackgroundColor(Color.TRANSPARENT)
+        btnSwitchCamera!!.setOnClickListener { switchCamera() }
+        
+        btnAudioOptions = ImageButton(this)
+        btnAudioOptions!!.setImageResource(R.drawable.baseline_volume_up_24)
+        btnAudioOptions!!.setBackgroundColor(Color.TRANSPARENT)
+        btnAudioOptions!!.setOnClickListener { showAudioOptions() }
+        
+        toolbar!!.addView(btnAudioOptions)
+        toolbar!!.addView(btnSwitchCamera)
+        
+        // Initialize audio device listener
+        setAudioDeviceChangeListener()
+        
         checkPermissions()
         val fragContainer = findViewById<View>(R.id.fragContainer) as LinearLayout
         val ll = LinearLayout(this)
@@ -152,14 +166,6 @@ class CreateOrJoinActivity : AppCompatActivity() {
         fragContainer.addView(ll)
         btnMic!!.setOnClickListener { toggleMic() }
         btnWebcam!!.setOnClickListener { toggleWebcam() }
-    }
-
-    override fun onCreateOptionsMenu(menu: Menu): Boolean {
-        menuInflater.inflate(R.menu.top_app_bar,menu)
-        optionsMenu = menu
-        setAudioDeviceChangeListener()
-
-        return super.onCreateOptionsMenu(menu)
     }
 
     override fun onOptionsItemSelected(item: MenuItem): Boolean {
@@ -173,9 +179,6 @@ class CreateOrJoinActivity : AppCompatActivity() {
                 toolbar!!.invalidate()
             }
             supportFragmentManager.popBackStack()
-        }
-        when (item.itemId) {
-            else -> super.onOptionsItemSelected(item)
         }
         return super.onOptionsItemSelected(item)
     }
@@ -203,9 +206,72 @@ class CreateOrJoinActivity : AppCompatActivity() {
                 Toast.makeText(this,"$removedDevices Removed", Toast.LENGTH_SHORT).show()
             }
         }
-
     }
 
+    private fun switchCamera() {
+        try {
+            // Get the list of available camera devices
+            val videoDevices = VideoSDK.getVideoDevices()
+            if (videoDevices.isNotEmpty()) {
+                // Get current camera device
+                val currentDevice = VideoSDK.getSelectedVideoDevice()
+                
+                // Find a different camera (instead of using indexOf which might be causing the issue)
+                val otherDevice = videoDevices.find { it != currentDevice }
+                
+                if (otherDevice != null) {
+                    // Clean up existing camera resources
+                    if (videoTrack != null) {
+                        videoTrack?.track?.setEnabled(false)
+                        videoTrack = null
+                        joinView!!.removeTrack()
+                    }
+                    
+                    // Switch to the other camera
+                    VideoSDK.setSelectedVideoDevice(otherDevice)
+                    
+                    // Update the camera view with the new device
+                    updateCameraView(otherDevice)
+                    
+                    Toast.makeText(this, "Camera switched", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this, "No other camera available", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(this, "No cameras available", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Log.e("CameraSwitch", "Error switching camera: ${e.message}")
+            Toast.makeText(this, "Failed to switch camera", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun showAudioOptions() {
+        try {
+            // Get the list of available audio devices
+            val availableDevices = VideoSDK.getAudioDevices()
+            if (availableDevices.isNotEmpty()) {
+                // Get current audio device
+                val currentDevice = VideoSDK.getSelectedAudioDevice()
+                
+                // Find a different audio device
+                val otherDevice = availableDevices.find { it != currentDevice }
+                
+                if (otherDevice != null) {
+                    // Switch to the other audio device
+                    VideoSDK.setSelectedAudioDevice(otherDevice)
+                    Toast.makeText(this, "Switched to ${otherDevice.label}", Toast.LENGTH_SHORT).show()
+                } else {
+                    Toast.makeText(this, "No other audio device available", Toast.LENGTH_SHORT).show()
+                }
+            } else {
+                Toast.makeText(this, "No audio devices available", Toast.LENGTH_SHORT).show()
+            }
+        } catch (e: Exception) {
+            Log.e("AudioSwitch", "Error switching audio device: ${e.message}")
+            Toast.makeText(this, "Failed to switch audio device", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     fun createMeetingFragment() {
         setActionBar()
@@ -290,13 +356,11 @@ class CreateOrJoinActivity : AppCompatActivity() {
         changeFloatingActionButtonLayout(btnWebcam, isWebcamEnabled)
     }
 
-
     private fun updateCameraView(videoDevice: VideoDeviceInfo?) {
         if (isWebcamEnabled) {
             cameraOffText?.visibility = View.GONE
             joinView!!.visibility = View.VISIBLE
 
-            // Initialize PeerConnectionFactory and SurfaceTextureHelper once
             if (peerConnectionFactory == null) {
                 initializationOptions = InitializationOptions.builder(this).createInitializationOptions()
                 PeerConnectionFactory.initialize(initializationOptions)
@@ -305,7 +369,6 @@ class CreateOrJoinActivity : AppCompatActivity() {
 
             SurfaceTextureHelper.create("CaptureThread", PeerConnectionUtils.getEglContext())
 
-            // Create video capturer for the front camera using Camera2Enumerator
             val videoCapturer = createCameraCapturer()
 
             if (videoCapturer != null) {
@@ -317,12 +380,11 @@ class CreateOrJoinActivity : AppCompatActivity() {
                     this,
                     videoDevice
                 )
-                // Display in localView
                 joinView!!.addTrack(videoTrack!!.track as VideoTrack?)
             }
         } else {
             if (videoTrack?.track?.state() == MediaStreamTrack.State.LIVE) {
-                videoTrack?.track?.setEnabled(false)  // Disable the track instead of disposing
+                videoTrack?.track?.setEnabled(false)
             }
             videoTrack = null
             joinView!!.removeTrack()
@@ -333,11 +395,9 @@ class CreateOrJoinActivity : AppCompatActivity() {
     }
 
     private fun createCameraCapturer(): VideoCapturer? {
-        // Use Camera2Enumerator for better compatibility
         val enumerator = Camera2Enumerator(this)
         val deviceNames = enumerator.deviceNames
 
-        // First, try to find front facing camera
         for (deviceName in deviceNames) {
             if (enumerator.isFrontFacing(deviceName)) {
                 val videoCapturer: VideoCapturer? = enumerator.createCapturer(deviceName, null)
@@ -347,7 +407,6 @@ class CreateOrJoinActivity : AppCompatActivity() {
             }
         }
 
-        // Front facing camera not found, try to create capturer for back camera
         for (deviceName in deviceNames) {
             if (!enumerator.isFrontFacing(deviceName)) {
                 val videoCapturer: VideoCapturer? = enumerator.createCapturer(deviceName, null)

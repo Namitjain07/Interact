@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">Android VideoSDK App</string>
+    <string name="app_name">Interact</string>
     <string name="switch_camera">Switch Camera Mode</string>
     <string name="leave_meeting">Leave meeting</string>
     <string name="toggle_camera">Toggle camera</string>
