@@ -1,10 +1,10 @@
 [versions]
-agp = "8.9.1"
+agp = "8.9.2"
 androidGifDrawable = "1.2.22"
 androidNetworking = "1.0.2"
 androidNetworkingVersion = "1.0.2"
 cardview = "1.0.0"
-firebaseBom = "33.12.0"
+firebaseBom = "33.13.0"
 googleServices = "4.4.2"
 firebaseCrashlyticsGradle = "3.0.3"
 kotlin = "2.1.0"
