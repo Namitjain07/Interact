@@ -49,6 +49,7 @@ import com.app.interact.utils.NetworkUtils
 import com.app.interact.adapter.ParticipantViewAdapter
 import com.app.interact.utils.HelperClass
 import com.app.interact.utils.ParticipantState
+import com.app.interact.utils.PersistentBottomBarHelper
 import com.app.interact.R
 import com.app.interact.adapter.CameraDeviceListAdapter
 import live.videosdk.rtc.android.CustomStreamTrack
@@ -119,6 +120,8 @@ class GroupCallActivity : AppCompatActivity() {
     private var chatListener: PubSubMessageListener? = null
     private var raiseHandListener: PubSubMessageListener? = null
 
+    private lateinit var bottomBarHelper: PersistentBottomBarHelper
+
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -152,6 +155,12 @@ class GroupCallActivity : AppCompatActivity() {
         if (localParticipantName == null) {
             localParticipantName = "John Doe"
         }
+
+        // Set scale type for buttons
+        btnLeave?.scaleType = ImageView.ScaleType.FIT_CENTER
+        btnChat?.scaleType = ImageView.ScaleType.FIT_CENTER
+        btnMore?.scaleType = ImageView.ScaleType.FIT_CENTER
+        btnWebcam?.scaleType = ImageView.ScaleType.FIT_CENTER
 
         // pass the token generated from api server
         VideoSDK.config(token)
@@ -253,23 +262,20 @@ class GroupCallActivity : AppCompatActivity() {
                                     toolbarAnimation.duration = 500
                                     toolbarAnimation.fillAfter = true
                                     toolbar.startAnimation(toolbarAnimation)
-                                    val bottomAppBar = findViewById<BottomAppBar>(R.id.bottomAppbar)
-                                    bottomAppBar.visibility = VISIBLE
-                                    var i = 0
-                                    while (i < bottomAppBar.childCount) {
-                                        bottomAppBar.getChildAt(i).visibility = VISIBLE
-                                        i++
-                                    }
+                                    val bottomBarContainer = findViewById<View>(R.id.bottomBarContainer)
+                                    bottomBarContainer.visibility = VISIBLE
+                                    val controlPanelLayout = findViewById<LinearLayout>(R.id.control_panel_layout)
+                                    controlPanelLayout.visibility = VISIBLE
                                     val animate = TranslateAnimation(
                                         0F,
                                         0F,
-                                        findViewById<View>(R.id.bottomAppbar).height
+                                        findViewById<View>(R.id.bottomBarContainer).height
                                             .toFloat(),
                                         0F
                                     )
                                     animate.duration = 300
                                     animate.fillAfter = true
-                                    findViewById<View>(R.id.bottomAppbar).startAnimation(animate)
+                                    findViewById<View>(R.id.bottomBarContainer).startAnimation(animate)
                                 } else {
                                     toolbar.visibility = GONE
                                     run {
@@ -297,23 +303,20 @@ class GroupCallActivity : AppCompatActivity() {
                                     toolbarAnimation.duration = 500
                                     toolbarAnimation.fillAfter = true
                                     toolbar.startAnimation(toolbarAnimation)
-                                    val bottomAppBar = findViewById<BottomAppBar>(R.id.bottomAppbar)
-                                    bottomAppBar.visibility = GONE
-                                    var i = 0
-                                    while (i < bottomAppBar.childCount) {
-                                        bottomAppBar.getChildAt(i).visibility = GONE
-                                        i++
-                                    }
+                                    val bottomBarContainer = findViewById<View>(R.id.bottomBarContainer)
+                                    bottomBarContainer.visibility = GONE
+                                    val controlPanelLayout = findViewById<LinearLayout>(R.id.control_panel_layout)
+                                    controlPanelLayout.visibility = GONE
                                     val animate = TranslateAnimation(
                                         0F,
                                         0F,
                                         0F,
-                                        findViewById<View>(R.id.bottomAppbar).height
+                                        findViewById<View>(R.id.bottomBarContainer).height
                                             .toFloat()
                                     )
                                     animate.duration = 400
                                     animate.fillAfter = true
-                                    findViewById<View>(R.id.bottomAppbar).startAnimation(animate)
+                                    findViewById<View>(R.id.bottomBarContainer).startAnimation(animate)
                                 }
                                 fullScreen = !fullScreen
                                 clickCount = 0
@@ -359,6 +362,18 @@ class GroupCallActivity : AppCompatActivity() {
                 -85
             )
         }
+
+        bottomBarHelper = PersistentBottomBarHelper(this)
+        bottomBarHelper.setupPersistentBottomBar()
+    }
+
+    override fun onResume() {
+        super.onResume()
+        bottomBarHelper.refreshBottomBarVisibility()
+    }
+
+    private fun updateUI() {
+        bottomBarHelper.refreshBottomBarVisibility()
     }
 
     fun getTouchListener(): OnTouchListener? {
@@ -368,18 +383,19 @@ class GroupCallActivity : AppCompatActivity() {
     private fun toggleMicIcon() {
         if (micEnabled) {
             btnMic!!.setImageResource(R.drawable.ic_mic_on)
+            btnMic!!.setColorFilter(ContextCompat.getColor(this, R.color.white)) // Set white tint
             btnAudioSelection!!.setImageResource(R.drawable.ic_baseline_arrow_drop_down_24)
-            micLayout!!.background =
-                ContextCompat.getDrawable(this@GroupCallActivity, R.drawable.layout_selected)
+            btnAudioSelection!!.setColorFilter(ContextCompat.getColor(this, R.color.white)) // Set white tint
         } else {
             btnMic!!.setImageResource(R.drawable.ic_mic_off_24)
+            btnMic!!.setColorFilter(ContextCompat.getColor(this, R.color.white)) // Keep white tint
             btnAudioSelection!!.setImageResource(R.drawable.ic_baseline_arrow_drop_down)
-            micLayout!!.setBackgroundColor(Color.WHITE)
-            micLayout!!.background =
-                ContextCompat.getDrawable(this@GroupCallActivity, R.drawable.layout_nonselected)
+            btnAudioSelection!!.setColorFilter(ContextCompat.getColor(this, R.color.white)) // Keep white tint
         }
+        // Center the icons after changing them
+        btnMic!!.scaleType = ImageView.ScaleType.FIT_CENTER
+        btnAudioSelection!!.scaleType = ImageView.ScaleType.FIT_CENTER
     }
-
     @SuppressLint("ResourceType")
     private fun toggleWebcamIcon() {
         if (webcamEnabled) {
@@ -387,7 +403,6 @@ class GroupCallActivity : AppCompatActivity() {
             btnWebcam!!.setColorFilter(Color.WHITE)
             var buttonDrawable = btnWebcam!!.background
             buttonDrawable = DrawableCompat.wrap(buttonDrawable!!)
-            //the color is a direct color int and not a color resource
             DrawableCompat.setTint(buttonDrawable, Color.TRANSPARENT)
             btnWebcam!!.background = buttonDrawable
         } else {
@@ -395,10 +410,11 @@ class GroupCallActivity : AppCompatActivity() {
             btnWebcam!!.setColorFilter(Color.BLACK)
             var buttonDrawable = btnWebcam!!.background
             buttonDrawable = DrawableCompat.wrap(buttonDrawable!!)
-            //the color is a direct color int and not a color resource
             DrawableCompat.setTint(buttonDrawable, Color.WHITE)
             btnWebcam!!.background = buttonDrawable
         }
+        // Ensure the icon is properly centered
+        btnWebcam!!.scaleType = ImageView.ScaleType.FIT_CENTER
     }
 
 

@@ -4,102 +4,156 @@
     android:id="@+id/layout_chat"
     android:layout_width="match_parent"
     android:layout_height="wrap_content"
-    android:minHeight="300dp"
+    android:minHeight="350dp"
     android:orientation="vertical"
-    android:theme="@style/Theme.AppCompat.DayNight.NoActionBar">
+    android:background="@drawable/chat_background_gradient"
+    android:theme="@style/Theme.AppCompat.DayNight.NoActionBar"
+    android:animateLayoutChanges="true">
 
+    <!-- Header with modern styling -->
     <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:paddingTop="15dp"
-        android:paddingBottom="15dp"
-        android:layout_marginStart="20dp"
-        android:layout_marginBottom="2dp">
+        android:paddingTop="16dp"
+        android:paddingBottom="12dp"
+        android:paddingStart="20dp"
+        android:paddingEnd="20dp"
+        android:background="@drawable/chat_header_gradient"
+        android:elevation="4dp"
+        android:animateLayoutChanges="true">
 
-        <TextView
-            android:id="@+id/participant_heading"
+        <LinearLayout
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:layout_gravity="center"
-            android:text="Chat"
-            android:textColor="@color/white"
-            android:textFontWeight="700"
-            android:textSize="20dp"
-            tools:ignore="RelativeOverlap" />
+            android:orientation="horizontal"
+            android:gravity="center_vertical">
+
+            <TextView
+                android:id="@+id/participant_heading"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Chat"
+                android:textColor="@color/white"
+                android:fontFamily="sans-serif-medium"
+                android:textFontWeight="700"
+                android:textSize="20sp" />
+
+            <!-- Badge for unread messages -->
+            <TextView
+                android:id="@+id/unread_count"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/message_count_badge"
+                android:gravity="center"
+                android:text="0"
+                android:textColor="@color/white"
+                android:textSize="12sp"
+                android:paddingHorizontal="6dp"
+                android:paddingVertical="2dp"
+                android:visibility="gone"/>
+        </LinearLayout>
 
         <ImageView
             android:id="@+id/ic_close"
-            android:layout_width="25dp"
-            android:layout_height="25dp"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
             android:layout_alignParentEnd="true"
-            android:layout_gravity="center"
-            android:layout_marginEnd="13dp"
+            android:layout_centerVertical="true"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:clickable="true"
+            android:focusable="true"
+            android:padding="2dp"
             android:src="@drawable/ic_baseline_close_24" />
-
 
     </RelativeLayout>
 
+    <!-- Divider with animation -->
+    <View
+        android:layout_width="match_parent"
+        android:layout_height="1dp"
+        android:background="@drawable/divider_gradient"
+        android:layout_marginBottom="8dp"
+        android:alpha="0.6"/>
+
+    <!-- Messages container with improved styling -->
     <RelativeLayout
         android:layout_width="match_parent"
-        android:layout_height="wrap_content"
+        android:layout_height="0dp"
         android:layout_weight="1"
-        android:minHeight="22dp"
-        android:layout_marginStart="20dp"
-        android:layout_marginEnd="20dp">
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:clipToPadding="false"
+        android:animateLayoutChanges="true">
 
         <androidx.recyclerview.widget.RecyclerView
             android:id="@+id/messageRcv"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"
+            android:clipToPadding="false"
+            android:paddingTop="8dp"
+            android:paddingBottom="8dp"
+            android:scrollbars="none"
+            android:scrollbarStyle="outsideOverlay"
+            android:layoutAnimation="@anim/layout_animation_fall_down" />
 
     </RelativeLayout>
 
+    <!-- Message input area with improved styling -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginBottom="16dp"
-        android:background="@drawable/list_style"
-        android:paddingVertical="7dp"
-        android:layout_marginStart="20dp"
-        android:layout_marginEnd="20dp">
+        android:layout_marginTop="8dp"
+        android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
+        android:background="@drawable/chat_input_gradient"
+        android:paddingVertical="8dp"
+        android:paddingHorizontal="16dp"
+        android:gravity="center_vertical"
+        android:elevation="2dp"
+        android:animateLayoutChanges="true">
 
         <com.google.android.material.textfield.TextInputLayout
-            android:layout_width="wrap_content"
+            android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:textColorHint="@color/white"
+            android:textColorHint="#99FFFFFF"
+            android:background="@android:color/transparent"
             app:boxStrokeWidth="0dp"
             app:boxStrokeWidthFocused="0dp"
             app:hintEnabled="false"
             app:startIconDrawable="@drawable/ic_typewritter"
-            app:startIconTint="@color/white">
+            app:startIconTint="#99FFFFFF">
 
             <EditText
                 android:id="@+id/etMessage"
-                android:layout_width="305dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:background="@android:color/transparent"
-                android:backgroundTint="@color/transparentColor"
                 android:hint="@string/write_message"
                 android:textColor="@color/white"
-                android:textColorHint="@color/text_color"
-                android:fontFamily="sans-serif-medium"
-                android:textFontWeight="600"
-                android:maxHeight="35dp"
+                android:textColorHint="#99FFFFFF"
+                android:fontFamily="sans-serif"
+                android:textSize="14sp"
+                android:maxLines="4"
+                android:padding="8dp"
                 android:scrollbars="vertical" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
+        <!-- Replace with animated send button -->
         <ImageButton
             android:id="@+id/btnSend"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
+            android:layout_width="40dp"
+            android:layout_height="40dp"
             android:layout_gravity="center"
-            android:layout_marginEnd="7dp"
-            android:background="@drawable/bt_selector"
-            android:padding="10dp"
-            android:src="@drawable/ic_baseline_send_24" />
-
+            android:layout_marginStart="8dp"
+            android:background="@drawable/send_button_animated"
+            android:padding="8dp"
+            android:src="@drawable/ic_baseline_send_24"
+            android:contentDescription="Send message"
+            android:stateListAnimator="@animator/button_press_animator" />
 
     </LinearLayout>
 </LinearLayout>

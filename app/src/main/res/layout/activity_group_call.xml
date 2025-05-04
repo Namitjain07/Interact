@@ -245,109 +245,134 @@
 
     </FrameLayout>
 
-    <com.google.android.material.bottomappbar.BottomAppBar
-        android:id="@+id/bottomAppbar"
+    <FrameLayout
+        android:id="@+id/bottomBarContainer"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:animateLayoutChanges="true"
-        android:backgroundTint="@color/transparentColor"
-        android:gravity="center_horizontal"
-        android:paddingVertical="8dp"
-        tools:ignore="BottomAppBar">
+        android:layout_marginBottom="16dp"
+        android:layout_marginHorizontal="16dp"
+        android:paddingVertical="8dp">
 
         <LinearLayout
-            android:layout_width="wrap_content"
+            android:id="@+id/control_panel_layout"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center">
+            android:layout_gravity="center"
+            android:background="@drawable/pill_background"
+            android:padding="8dp"
+            android:gravity="center">
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/btnLeave"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
                 android:contentDescription="@string/leave_meeting"
                 android:src="@drawable/ic_end_call"
                 app:backgroundTint="@color/md_red_400"
                 app:fabSize="normal"
-                app:shapeAppearanceOverlay="@style/fab_square"
                 app:tint="@color/white"
-                app:maxImageSize="27sp" />
+                android:padding="0dp"
+                app:borderWidth="0dp"
+                android:scaleType="fitCenter"
+                app:maxImageSize="20sp"
+                app:shapeAppearance="@style/CircularFAB" />
 
+            <Space
+                android:layout_width="8dp"
+                android:layout_height="wrap_content" />
 
             <LinearLayout
                 android:id="@+id/micLayout"
                 android:layout_width="wrap_content"
-                android:layout_height="match_parent"
-                android:layout_marginHorizontal="12dp"
-                android:background="@drawable/layout_selected"
-                android:gravity="center_vertical"
-                app:borderWidth="3dp">
+                android:layout_height="50dp"
+                android:background="@drawable/oval_button_background"
+                android:gravity="center"
+                android:paddingHorizontal="16dp">
 
                 <ImageButton
                     android:id="@+id/btnMic"
-                    android:layout_width="21sp"
-                    android:layout_height="21sp"
-                    android:layout_margin="8dp"
+                    android:layout_width="22sp"
+                    android:layout_height="22sp"
                     android:background="@color/transparentColor"
                     android:src="@drawable/ic_mic_on"
-                    android:scaleType="fitXY"/>
+                    android:layout_marginEnd="4dp"
+                    android:padding="0dp"
+                    android:scaleType="fitCenter"/>
+
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="24dp"
+                    android:background="#555555"
+                    android:layout_marginHorizontal="6dp"/>
 
                 <ImageButton
                     android:id="@+id/btnAudioSelection"
-                    android:layout_width="25sp"
-                    android:layout_height="25sp"
-                    android:layout_margin="3dp"
+                    android:layout_width="22sp"
+                    android:layout_height="22sp"
                     android:background="@color/transparentColor"
                     android:src="@drawable/ic_baseline_arrow_drop_down_24"
-                    android:scaleType="fitXY" />
-
+                    android:layout_marginStart="2dp"
+                    android:padding="0dp"
+                    android:scaleType="fitCenter" />
             </LinearLayout>
 
+            <Space
+                android:layout_width="8dp"
+                android:layout_height="wrap_content" />
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/btnWebcam"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginRight="10dp"
-                android:backgroundTint="@color/transparentColor"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:backgroundTint="#1A1A1A"
                 android:contentDescription="@string/toggle_camera"
                 android:src="@drawable/ic_video_camera"
                 app:tint="@color/white"
-                app:backgroundTint="@color/md_grey_1000"
-                app:borderWidth="1dp"
                 app:fabSize="normal"
-                app:maxImageSize="26sp"
-                app:shapeAppearanceOverlay="@style/fab_square" />
+                android:padding="0dp"
+                app:borderWidth="0dp"
+                android:scaleType="fitCenter"
+                app:maxImageSize="20sp"
+                app:shapeAppearance="@style/CircularFAB" />
+
+            <Space
+                android:layout_width="8dp"
+                android:layout_height="wrap_content" />
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/btnChat"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginRight="10dp"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
                 app:tint="@color/white"
-                android:backgroundTint="@color/transparentColor"
+                android:backgroundTint="#1A1A1A"
                 android:contentDescription="@string/chat"
                 android:src="@drawable/ic_chat"
-                app:backgroundTint="@color/md_grey_1000"
-                app:borderWidth="1dp"
                 app:fabSize="normal"
-                app:shapeAppearanceOverlay="@style/fab_square" />
+                android:padding="0dp"
+                app:borderWidth="0dp"
+                android:scaleType="fitCenter"
+                app:maxImageSize="20sp"
+                app:shapeAppearance="@style/CircularFAB" />
+
+            <Space
+                android:layout_width="8dp"
+                android:layout_height="wrap_content" />
 
             <com.google.android.material.floatingactionbutton.FloatingActionButton
                 android:id="@+id/btnMore"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:backgroundTint="@color/transparentColor"
+                android:layout_width="50dp"
+                android:layout_height="50dp"
+                android:backgroundTint="#1A1A1A"
                 android:contentDescription="@string/more_options"
                 app:tint="@color/white"
                 android:src="@drawable/ic_more_options"
-                app:backgroundTint="@color/md_grey_1000"
-                app:borderWidth="1dp"
                 app:fabSize="normal"
-                app:shapeAppearanceOverlay="@style/fab_square" />
-
+                android:padding="0dp"
+                app:borderWidth="0dp"
+                android:scaleType="fitCenter"
+                app:maxImageSize="20sp"
+                app:shapeAppearance="@style/CircularFAB" />
         </LinearLayout>
-
-    </com.google.android.material.bottomappbar.BottomAppBar>
-
+    </FrameLayout>
 
 </LinearLayout>
