@@ -1061,87 +1061,165 @@ class GroupCallActivity : AppCompatActivity() {
         bottomSheetDialog.show()
     }
 
-    @SuppressLint("RtlHardcoded")
-    private fun showMoreOptionsDialog() {
-        val participantSize = meeting!!.participants.size + 1
-        val moreOptionsArrayList: ArrayList<ListItem> = ArrayList<ListItem>()
-        val raised_hand = ListItem(
-            "Raise Hand",
-            AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.raise_hand)!!
-        )
-        val start_screen_share = ListItem(
-            "Share screen",
-            AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_screen_share)!!
-        )
-        val stop_screen_share = ListItem(
-            "Stop screen share",
-            AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_screen_share)!!
-        )
-        val start_recording = ListItem(
-            "Start recording",
-            AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_recording)!!
-        )
-        val stop_recording = ListItem(
-            "Stop recording",
-            AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_recording)!!
-        )
-        val participant_list = ListItem(
-            "Participants ($participantSize)",
-            AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_people)!!
-        )
-        moreOptionsArrayList.add(raised_hand)
-        if (localScreenShare) {
-            moreOptionsArrayList.add(stop_screen_share)
-        } else {
-            moreOptionsArrayList.add(start_screen_share)
-        }
-        if (recording) {
-            moreOptionsArrayList.add(stop_recording)
-        } else {
-            moreOptionsArrayList.add(start_recording)
-        }
-        moreOptionsArrayList.add(participant_list)
-        val arrayAdapter: ArrayAdapter<*> = MoreOptionsListAdapter(
-            this@GroupCallActivity,
-            R.layout.more_options_list_layout,
-            moreOptionsArrayList
-        )
-        val materialAlertDialogBuilder =
-            MaterialAlertDialogBuilder(this@GroupCallActivity, R.style.AlertDialogCustom)
-                .setAdapter(
-                    arrayAdapter
-                ) { _: DialogInterface?, which: Int ->
-                    when (which) {
-                        0 -> {
-                            raisedHand()
-                        }
-                        1 -> {
-                            toggleScreenSharing()
-                        }
-                        2 -> {
-                            toggleRecording()
-                        }
-                        3 -> {
-                            openParticipantList()
-                        }
-                    }
-                }
-        val alertDialog = materialAlertDialogBuilder.create()
-        val listView = alertDialog.listView
-        listView.divider =
-            ContextCompat.getColor(this, R.color.md_grey_200).toDrawable() // set color
-        listView.setFooterDividersEnabled(false)
-        listView.addFooterView(View(this@GroupCallActivity))
-        listView.dividerHeight = 2
-        val wmlp = alertDialog.window!!.attributes
-        wmlp.gravity = Gravity.BOTTOM or Gravity.RIGHT
-        val layoutParams = WindowManager.LayoutParams()
-        layoutParams.copyFrom(alertDialog.window!!.attributes)
-        layoutParams.width = (getWindowWidth() * 0.8).roundToInt().toInt()
-        layoutParams.height = WindowManager.LayoutParams.WRAP_CONTENT
-        alertDialog.window!!.attributes = layoutParams
-        alertDialog.show()
+//    @SuppressLint("RtlHardcoded")
+//    private fun showMoreOptionsDialog() {
+//        val participantSize = meeting!!.participants.size + 1
+//        val moreOptionsArrayList: ArrayList<ListItem> = ArrayList<ListItem>()
+//        val raised_hand = ListItem(
+//            "Raise Hand",
+//            AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.raise_hand)!!
+//        )
+//        val start_screen_share = ListItem(
+//            "Share screen",
+//            AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_screen_share)!!
+//        )
+//        val stop_screen_share = ListItem(
+//            "Stop screen share",
+//            AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_screen_share)!!
+//        )
+//        val start_recording = ListItem(
+//            "Start recording",
+//            AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_recording)!!
+//        )
+//        val stop_recording = ListItem(
+//            "Stop recording",
+//            AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_recording)!!
+//        )
+//        val participant_list = ListItem(
+//            "Participants ($participantSize)",
+//            AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_people)!!
+//        )
+//        moreOptionsArrayList.add(raised_hand)
+//        if (localScreenShare) {
+//            moreOptionsArrayList.add(stop_screen_share)
+//        } else {
+//            moreOptionsArrayList.add(start_screen_share)
+//        }
+//        if (recording) {
+//            moreOptionsArrayList.add(stop_recording)
+//        } else {
+//            moreOptionsArrayList.add(start_recording)
+//        }
+//        moreOptionsArrayList.add(participant_list)
+//        val arrayAdapter: ArrayAdapter<*> = MoreOptionsListAdapter(
+//            this@GroupCallActivity,
+//            R.layout.more_options_list_layout,
+//            moreOptionsArrayList
+//        )
+//        val materialAlertDialogBuilder =
+//            MaterialAlertDialogBuilder(this@GroupCallActivity, R.style.AlertDialogCustom)
+//                .setAdapter(
+//                    arrayAdapter
+//                ) { _: DialogInterface?, which: Int ->
+//                    when (which) {
+//                        0 -> {
+//                            raisedHand()
+//                        }
+//                        1 -> {
+//                            toggleScreenSharing()
+//                        }
+//                        2 -> {
+//                            toggleRecording()
+//                        }
+//                        3 -> {
+//                            openParticipantList()
+//                        }
+//                    }
+//                }
+//        val alertDialog = materialAlertDialogBuilder.create()
+//        val listView = alertDialog.listView
+//        listView.divider =
+//            ContextCompat.getColor(this, R.color.md_grey_200).toDrawable() // set color
+//        listView.setFooterDividersEnabled(false)
+//        listView.addFooterView(View(this@GroupCallActivity))
+//        listView.dividerHeight = 2
+//        val wmlp = alertDialog.window!!.attributes
+//        wmlp.gravity = Gravity.BOTTOM or Gravity.RIGHT
+//        val layoutParams = WindowManager.LayoutParams()
+//        layoutParams.copyFrom(alertDialog.window!!.attributes)
+//        layoutParams.width = (getWindowWidth() * 0.8).roundToInt().toInt()
+//        layoutParams.height = WindowManager.LayoutParams.WRAP_CONTENT
+//        alertDialog.window!!.attributes = layoutParams
+//        alertDialog.show()
+//    }
+@SuppressLint("InflateParams")
+private fun showMoreOptionsDialog() {
+    val participantSize = meeting!!.participants.size + 1
+    val moreOptionsArrayList: ArrayList<ListItem> = ArrayList<ListItem>()
+
+    val raisedHand = ListItem(
+        "Raise Hand",
+        AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.raise_hand)!!
+    )
+    val startScreenShare = ListItem(
+        "Share screen",
+        AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_screen_share)!!
+    )
+    val stopScreenShare = ListItem(
+        "Stop screen share",
+        AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_screen_share)!!
+    )
+    val startRecording = ListItem(
+        "Start recording",
+        AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_recording)!!
+    )
+    val stopRecording = ListItem(
+        "Stop recording",
+        AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_recording)!!
+    )
+    val participantList = ListItem(
+        "Participants ($participantSize)",
+        AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_people)!!
+    )
+
+    moreOptionsArrayList.add(raisedHand)
+    if (localScreenShare) {
+        moreOptionsArrayList.add(stopScreenShare)
+    } else {
+        moreOptionsArrayList.add(startScreenShare)
     }
+    if (recording) {
+        moreOptionsArrayList.add(stopRecording)
+    } else {
+        moreOptionsArrayList.add(startRecording)
+    }
+    moreOptionsArrayList.add(participantList)
+
+    // Inflate the BottomSheet layout
+    val view = layoutInflater.inflate(R.layout.more_options_bottomsheet, null)
+    val listView = view.findViewById<ListView>(R.id.list_view_more_options)
+
+    // Set the custom adapter
+    val arrayAdapter = MoreOptionsListAdapter(
+        this@GroupCallActivity,
+        R.layout.more_options_list_layout,
+        moreOptionsArrayList
+    )
+    listView.adapter = arrayAdapter
+
+    // Create and show the BottomSheetDialog
+    val bottomSheetDialog = BottomSheetDialog(this@GroupCallActivity, R.style.BottomSheetDialogTheme)
+    bottomSheetDialog.setContentView(view)
+
+    // Handle item clicks
+    listView.setOnItemClickListener { _, _, which, _ ->
+        when (which) {
+            0 -> { raisedHand() }
+            1 -> { toggleScreenSharing() }
+            2 -> { toggleRecording() }
+            3 -> { openParticipantList() }
+        }
+        bottomSheetDialog.dismiss()
+    }
+
+    bottomSheetDialog.setOnShowListener {
+        val bottomSheet = bottomSheetDialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+        bottomSheet?.setBackgroundResource(android.R.color.transparent)
+    }
+
+    bottomSheetDialog.show()
+    }
+
 
     private fun raisedHand() {
         meeting!!.pubSub.publish("RAISE_HAND", "Raise Hand by Me", PubSubPublishOptions())
