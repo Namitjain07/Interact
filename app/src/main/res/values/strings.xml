@@ -11,7 +11,7 @@
     <string name="enter_your_name">Enter your name</string>
     <string name="join_meeting">Join a meeting</string>
     <string name="chat">Chat</string>
-    <string name="notificationTitle">VideoSDK RTC is sharing your screen</string>
+    <string name="notificationTitle">Interact is sharing your screen</string>
     <string name="notificationContent">meeting is running</string>
     <string name="write_message">Write your message</string>
     <string name="remove">Remove</string>
