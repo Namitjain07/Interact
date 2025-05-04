@@ -245,6 +245,40 @@
 
     </FrameLayout>
 
+    <androidx.core.widget.NestedScrollView
+        android:id="@+id/transcriptionScrollView"
+        android:layout_width="match_parent"
+        android:layout_height="150dp"
+        android:layout_above="@+id/bottomBarContainer"
+        android:visibility="gone"
+        android:background="#80000000">
+        
+        <LinearLayout
+            android:id="@+id/transcriptionContainer"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="8dp">
+            
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Live Transcription"
+                android:textStyle="bold"
+                android:textColor="#FFFFFF"
+                android:textSize="16sp"
+                android:gravity="center" />
+                
+            <TextView
+                android:id="@+id/transcriptionTextView"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:textColor="#FFFFFF"
+                android:textSize="14sp"
+                android:paddingTop="8dp" />
+        </LinearLayout>
+    </androidx.core.widget.NestedScrollView>
+
     <FrameLayout
         android:id="@+id/bottomBarContainer"
         android:layout_width="match_parent"

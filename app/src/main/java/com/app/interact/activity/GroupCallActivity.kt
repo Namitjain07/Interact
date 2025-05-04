@@ -69,6 +69,12 @@ import org.webrtc.RendererCommon
 import org.webrtc.VideoTrack
 import java.util.*
 import kotlin.math.roundToInt
+import live.videosdk.rtc.android.lib.transcription.TranscriptionConfig
+import live.videosdk.rtc.android.lib.transcription.SummaryConfig
+import live.videosdk.rtc.android.lib.transcription.TranscriptionState
+import live.videosdk.rtc.android.lib.transcription.TranscriptionText
+import android.widget.ScrollView
+import androidx.core.widget.NestedScrollView
 
 
 class GroupCallActivity : AppCompatActivity() {
@@ -121,6 +127,13 @@ class GroupCallActivity : AppCompatActivity() {
     private var raiseHandListener: PubSubMessageListener? = null
 
     private lateinit var bottomBarHelper: PersistentBottomBarHelper
+
+    private var transcriptionEnabled = false
+    private var btnTranscription: FloatingActionButton? = null
+    private var transcriptionContainer: LinearLayout? = null
+    private var transcriptionTextView: TextView? = null
+    private var transcriptionScrollView: NestedScrollView? = null
+    private var transcriptionStatusSnackbar: Snackbar? = null
 
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -214,7 +227,7 @@ class GroupCallActivity : AppCompatActivity() {
             findViewById(R.id.mainLayout), "Recording will be started in few moments",
             Snackbar.LENGTH_INDEFINITE
         )
-//        HelperClass.setSnackBarStyle(recordingStatusSnackbar!!.view, 0)
+        styleSnackbar(recordingStatusSnackbar!!)
         recordingStatusSnackbar!!.isGestureInsetBottomIgnored = true
         viewAdapter = ParticipantViewAdapter(this@GroupCallActivity, meeting!!)
         onTouchListener = object : OnTouchListener {
@@ -365,6 +378,19 @@ class GroupCallActivity : AppCompatActivity() {
 
         bottomBarHelper = PersistentBottomBarHelper(this)
         bottomBarHelper.setupPersistentBottomBar()
+
+        // Initialize transcription views
+        transcriptionContainer = findViewById(R.id.transcriptionContainer)
+        transcriptionTextView = findViewById(R.id.transcriptionTextView)
+        transcriptionScrollView = findViewById(R.id.transcriptionScrollView)
+
+        // Setup transcription status snackbar
+        transcriptionStatusSnackbar = Snackbar.make(
+            findViewById(R.id.mainLayout), "Transcription will be started in few moments",
+            Snackbar.LENGTH_INDEFINITE
+        )
+        styleSnackbar(transcriptionStatusSnackbar!!)
+        transcriptionStatusSnackbar!!.isGestureInsetBottomIgnored = true
     }
 
     override fun onResume() {
@@ -417,6 +443,13 @@ class GroupCallActivity : AppCompatActivity() {
         btnWebcam!!.scaleType = ImageView.ScaleType.FIT_CENTER
     }
 
+    private fun styleSnackbar(snackbar: Snackbar) {
+        val snackbarView = snackbar.view
+        snackbarView.setBackgroundColor(Color.BLACK)
+        val textView = snackbarView.findViewById<TextView>(com.google.android.material.R.id.snackbar_text)
+        textView.setTextColor(Color.WHITE)
+        snackbar.isGestureInsetBottomIgnored = true
+    }
 
     private val meetingEventListener: MeetingEventListener = object : MeetingEventListener() {
         @SuppressLint("UseCompatLoadingForDrawables", "SetTextI18n")
@@ -464,8 +497,7 @@ class GroupCallActivity : AppCompatActivity() {
                         drawable.setBounds(0, 0, 50, 65)
                         textView.setCompoundDrawablesRelative(drawable, null, null, null)
                         textView.compoundDrawablePadding = 15
-                        HelperClass.setSnackBarStyle(snackbar.view, 0)
-                        snackbar.isGestureInsetBottomIgnored = true
+                        styleSnackbar(snackbar)
                         snackbar.view.setOnClickListener { snackbar.dismiss() }
                         snackbar.show()
                     }
@@ -480,8 +512,7 @@ class GroupCallActivity : AppCompatActivity() {
                                     pubSubMessage.message), Snackbar.LENGTH_SHORT
                         )
                             .setDuration(2000)
-                        val snackbarView = snackbar.view
-                        HelperClass.setSnackBarStyle(snackbarView, 0)
+                        styleSnackbar(snackbar)
                         snackbar.view.setOnClickListener { snackbar.dismiss() }
                         snackbar.show()
                     }
@@ -574,7 +605,7 @@ class GroupCallActivity : AppCompatActivity() {
                     findViewById(R.id.mainLayout), error.getString("message"),
                     Snackbar.LENGTH_LONG
                 )
-                HelperClass.setSnackBarStyle(snackbar.view, 0)
+                styleSnackbar(snackbar)
                 snackbar.view.setOnClickListener { snackbar.dismiss() }
                 snackbar.show()
             } catch (e: Exception) {
@@ -595,7 +626,7 @@ class GroupCallActivity : AppCompatActivity() {
                     ), 0, 1, 0
                 )
                 val snackbar = Snackbar.make(parentLayout, builderTextLeft, Snackbar.LENGTH_LONG)
-                HelperClass.setSnackBarStyle(snackbar.view, resources.getColor(R.color.md_red_400))
+                styleSnackbar(snackbar)
                 snackbar.view.setOnClickListener { snackbar.dismiss() }
                 snackbar.show()
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.Q) {
@@ -610,6 +641,70 @@ class GroupCallActivity : AppCompatActivity() {
 
         override fun onWebcamRequested(participantId: String, listener: WebcamRequestListener) {
             showWebcamRequestDialog(listener)
+        }
+
+        override fun onTranscriptionStateChanged(data: JSONObject) {
+            try {
+                val status = data.getString("status")
+                val id = data.getString("id")
+
+                runOnUiThread {
+                    when (status) {
+                        TranscriptionState.TRANSCRIPTION_STARTING.name -> {
+                            Log.d("Transcription", "Realtime Transcription is starting, ID: $id")
+                            transcriptionStatusSnackbar?.show()
+                        }
+                        TranscriptionState.TRANSCRIPTION_STARTED.name -> {
+                            Log.d("Transcription", "Realtime Transcription is started, ID: $id")
+                            transcriptionStatusSnackbar?.dismiss()
+                            transcriptionEnabled = true
+                            transcriptionContainer?.visibility = VISIBLE
+
+                            Toast.makeText(
+                                this@GroupCallActivity, "Transcription started",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                        TranscriptionState.TRANSCRIPTION_STOPPING.name -> {
+                            Log.d("Transcription", "Realtime Transcription is stopping, ID: $id")
+                        }
+                        TranscriptionState.TRANSCRIPTION_STOPPED.name -> {
+                            Log.d("Transcription", "Realtime Transcription is stopped, ID: $id")
+                            transcriptionEnabled = false
+                            transcriptionContainer?.visibility = GONE
+
+                            Toast.makeText(
+                                this@GroupCallActivity, "Transcription stopped",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        }
+                        else -> Log.d("Transcription", "Unknown transcription state: $status, ID: $id")
+                    }
+                }
+            } catch (e: Exception) {
+                Log.e("Transcription", "Error parsing transcription state", e)
+            }
+        }
+
+        override fun onTranscriptionText(data: TranscriptionText) {
+            val participantId: String = data.participantId
+            val participantName: String = data.participantName
+            val text: String = data.text
+            val timestamp: Int = data.timestamp
+            val type: String = data.type
+
+            runOnUiThread {
+                // Append text to the transcription view
+                val formattedText = "$participantName: $text\n"
+                transcriptionTextView?.append(formattedText)
+
+                // Auto-scroll to the bottom
+                transcriptionScrollView?.post {
+                    transcriptionScrollView?.fullScroll(ScrollView.FOCUS_DOWN)
+                }
+            }
+
+            Log.d("Transcription", "$participantName: $text $timestamp")
         }
     }
 
@@ -629,8 +724,7 @@ class GroupCallActivity : AppCompatActivity() {
                         findViewById(R.id.mainLayout), "You started presenting",
                         Snackbar.LENGTH_SHORT
                     )
-                    HelperClass.setSnackBarStyle(screenShareParticipantNameSnackbar!!.view, 0)
-                    screenShareParticipantNameSnackbar!!.isGestureInsetBottomIgnored = true
+                    styleSnackbar(screenShareParticipantNameSnackbar!!)
                     screenShareParticipantNameSnackbar!!.view.setOnClickListener { screenShareParticipantNameSnackbar!!.dismiss() }
                     screenShareParticipantNameSnackbar!!.show()
                     localScreenShare = true
@@ -907,68 +1001,37 @@ class GroupCallActivity : AppCompatActivity() {
         }
     }
 
-    @SuppressLint("CutPasteId", "SetTextI18n")
-    private fun updatePresenter(participantId: String?) {
-        if (participantId == null) {
-            shareView!!.visibility = GONE
-            shareLayout!!.visibility = GONE
-            screenshareEnabled = false
-            return
+    private fun startTranscription() {
+        if (!transcriptionEnabled) {
+            transcriptionStatusSnackbar?.show()
+
+            // Create transcription configuration
+            val summaryConfig = SummaryConfig(
+                true,
+                "Write summary in sections like Title, Agenda, Speakers, Action Items, Outlines, Notes and Summary"
+            )
+
+            val transcriptionConfig = TranscriptionConfig(
+                null, // No webhook URL for this example
+                summaryConfig
+            )
+
+            meeting?.startTranscription(transcriptionConfig)
+        }
+    }
+
+    private fun stopTranscription() {
+        if (transcriptionEnabled) {
+            meeting?.stopTranscription()
+        }
+    }
+
+    private fun toggleTranscription() {
+        if (transcriptionEnabled) {
+            stopTranscription()
         } else {
-            screenshareEnabled = true
+            startTranscription()
         }
-
-        // find participant
-        val participant = meeting!!.participants[participantId] ?: return
-
-        // find share stream in participant
-        var shareStream: Stream? = null
-        for (stream: Stream in participant.streams.values) {
-            if ((stream.kind == "share")) {
-                shareStream = stream
-                break
-            }
-        }
-        if (shareStream == null) return
-        (findViewById<View>(R.id.tvScreenShareParticipantName) as TextView).text =
-            participant.displayName + " is presenting"
-        findViewById<View>(R.id.tvScreenShareParticipantName).visibility = VISIBLE
-        findViewById<View>(R.id.ivParticipantScreenShareNetwork).visibility = VISIBLE
-
-        // display share video
-        shareLayout!!.visibility = VISIBLE
-        shareView!!.visibility = VISIBLE
-        shareView!!.setZOrderMediaOverlay(true)
-        shareView!!.setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FIT)
-        val videoTrack = shareStream.track as VideoTrack
-        shareView!!.addTrack(videoTrack)
-        screenShareParticipantNameSnackbar = Snackbar.make(
-            findViewById(R.id.mainLayout), participant.displayName + " started presenting",
-            Snackbar.LENGTH_SHORT
-        )
-        HelperClass.setSnackBarStyle(screenShareParticipantNameSnackbar!!.view, 0)
-        screenShareParticipantNameSnackbar!!.isGestureInsetBottomIgnored = true
-        screenShareParticipantNameSnackbar!!.view.setOnClickListener { screenShareParticipantNameSnackbar!!.dismiss() }
-        screenShareParticipantNameSnackbar!!.show()
-
-
-        // listen for share stop event
-        participant.addEventListener(object : ParticipantEventListener() {
-            override fun onStreamDisabled(stream: Stream) {
-                if ((stream.kind == "share")) {
-                    val track: VideoTrack = stream.track as VideoTrack
-                    shareView!!.removeTrack()
-                    shareView!!.visibility = GONE
-                    shareLayout!!.visibility = GONE
-                    findViewById<View>(R.id.tvScreenShareParticipantName).visibility =
-                        GONE
-                    findViewById<View>(R.id.ivParticipantScreenShareNetwork).visibility =
-                        GONE
-
-                    localScreenShare = false
-                }
-            }
-        })
     }
 
     @SuppressLint("InflateParams")
@@ -1077,163 +1140,100 @@ class GroupCallActivity : AppCompatActivity() {
         bottomSheetDialog.show()
     }
 
-//    @SuppressLint("RtlHardcoded")
-//    private fun showMoreOptionsDialog() {
-//        val participantSize = meeting!!.participants.size + 1
-//        val moreOptionsArrayList: ArrayList<ListItem> = ArrayList<ListItem>()
-//        val raised_hand = ListItem(
-//            "Raise Hand",
-//            AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.raise_hand)!!
-//        )
-//        val start_screen_share = ListItem(
-//            "Share screen",
-//            AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_screen_share)!!
-//        )
-//        val stop_screen_share = ListItem(
-//            "Stop screen share",
-//            AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_screen_share)!!
-//        )
-//        val start_recording = ListItem(
-//            "Start recording",
-//            AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_recording)!!
-//        )
-//        val stop_recording = ListItem(
-//            "Stop recording",
-//            AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_recording)!!
-//        )
-//        val participant_list = ListItem(
-//            "Participants ($participantSize)",
-//            AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_people)!!
-//        )
-//        moreOptionsArrayList.add(raised_hand)
-//        if (localScreenShare) {
-//            moreOptionsArrayList.add(stop_screen_share)
-//        } else {
-//            moreOptionsArrayList.add(start_screen_share)
-//        }
-//        if (recording) {
-//            moreOptionsArrayList.add(stop_recording)
-//        } else {
-//            moreOptionsArrayList.add(start_recording)
-//        }
-//        moreOptionsArrayList.add(participant_list)
-//        val arrayAdapter: ArrayAdapter<*> = MoreOptionsListAdapter(
-//            this@GroupCallActivity,
-//            R.layout.more_options_list_layout,
-//            moreOptionsArrayList
-//        )
-//        val materialAlertDialogBuilder =
-//            MaterialAlertDialogBuilder(this@GroupCallActivity, R.style.AlertDialogCustom)
-//                .setAdapter(
-//                    arrayAdapter
-//                ) { _: DialogInterface?, which: Int ->
-//                    when (which) {
-//                        0 -> {
-//                            raisedHand()
-//                        }
-//                        1 -> {
-//                            toggleScreenSharing()
-//                        }
-//                        2 -> {
-//                            toggleRecording()
-//                        }
-//                        3 -> {
-//                            openParticipantList()
-//                        }
-//                    }
-//                }
-//        val alertDialog = materialAlertDialogBuilder.create()
-//        val listView = alertDialog.listView
-//        listView.divider =
-//            ContextCompat.getColor(this, R.color.md_grey_200).toDrawable() // set color
-//        listView.setFooterDividersEnabled(false)
-//        listView.addFooterView(View(this@GroupCallActivity))
-//        listView.dividerHeight = 2
-//        val wmlp = alertDialog.window!!.attributes
-//        wmlp.gravity = Gravity.BOTTOM or Gravity.RIGHT
-//        val layoutParams = WindowManager.LayoutParams()
-//        layoutParams.copyFrom(alertDialog.window!!.attributes)
-//        layoutParams.width = (getWindowWidth() * 0.8).roundToInt().toInt()
-//        layoutParams.height = WindowManager.LayoutParams.WRAP_CONTENT
-//        alertDialog.window!!.attributes = layoutParams
-//        alertDialog.show()
-//    }
-@SuppressLint("InflateParams")
-private fun showMoreOptionsDialog() {
-    val participantSize = meeting!!.participants.size + 1
-    val moreOptionsArrayList: ArrayList<ListItem> = ArrayList<ListItem>()
+    @SuppressLint("InflateParams")
+    private fun showMoreOptionsDialog() {
+        val participantSize = meeting!!.participants.size + 1
+        val moreOptionsArrayList: ArrayList<ListItem> = ArrayList<ListItem>()
 
-    val raisedHand = ListItem(
-        "Raise Hand",
-        AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.raise_hand)!!
-    )
-    val startScreenShare = ListItem(
-        "Share screen",
-        AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_screen_share)!!
-    )
-    val stopScreenShare = ListItem(
-        "Stop screen share",
-        AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_screen_share)!!
-    )
-    val startRecording = ListItem(
-        "Start recording",
-        AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_recording)!!
-    )
-    val stopRecording = ListItem(
-        "Stop recording",
-        AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_recording)!!
-    )
-    val participantList = ListItem(
-        "Participants ($participantSize)",
-        AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_people)!!
-    )
+        val raisedHand = ListItem(
+            "Raise Hand",
+            AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.raise_hand)!!
+        )
+        val startScreenShare = ListItem(
+            "Share screen",
+            AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_screen_share)!!
+        )
+        val stopScreenShare = ListItem(
+            "Stop screen share",
+            AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_screen_share)!!
+        )
+        val startRecording = ListItem(
+            "Start recording",
+            AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_recording)!!
+        )
+        val stopRecording = ListItem(
+            "Stop recording",
+            AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_recording)!!
+        )
+        val startTranscription = ListItem(
+            "Start transcription",
+            AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_transcription)!!
+        )
+        val stopTranscription = ListItem(
+            "Stop transcription",
+            AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_transcription)!!
+        )
+        val participantList = ListItem(
+            "Participants ($participantSize)",
+            AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_people)!!
+        )
 
-    moreOptionsArrayList.add(raisedHand)
-    if (localScreenShare) {
-        moreOptionsArrayList.add(stopScreenShare)
-    } else {
-        moreOptionsArrayList.add(startScreenShare)
-    }
-    if (recording) {
-        moreOptionsArrayList.add(stopRecording)
-    } else {
-        moreOptionsArrayList.add(startRecording)
-    }
-    moreOptionsArrayList.add(participantList)
-
-    // Inflate the BottomSheet layout
-    val view = layoutInflater.inflate(R.layout.more_options_bottomsheet, null)
-    val listView = view.findViewById<ListView>(R.id.list_view_more_options)
-
-    // Set the custom adapter
-    val arrayAdapter = MoreOptionsListAdapter(
-        this@GroupCallActivity,
-        R.layout.more_options_list_layout,
-        moreOptionsArrayList
-    )
-    listView.adapter = arrayAdapter
-
-    // Create and show the BottomSheetDialog
-    val bottomSheetDialog = BottomSheetDialog(this@GroupCallActivity, R.style.BottomSheetDialogTheme)
-    bottomSheetDialog.setContentView(view)
-
-    // Handle item clicks
-    listView.setOnItemClickListener { _, _, which, _ ->
-        when (which) {
-            0 -> { raisedHand() }
-            1 -> { toggleScreenSharing() }
-            2 -> { toggleRecording() }
-            3 -> { openParticipantList() }
+        moreOptionsArrayList.add(raisedHand)
+        
+        if (localScreenShare) {
+            moreOptionsArrayList.add(stopScreenShare)
+        } else {
+            moreOptionsArrayList.add(startScreenShare)
         }
-        bottomSheetDialog.dismiss()
-    }
+        
+        if (recording) {
+            moreOptionsArrayList.add(stopRecording)
+        } else {
+            moreOptionsArrayList.add(startRecording)
+        }
+        
+        if (transcriptionEnabled) {
+            moreOptionsArrayList.add(stopTranscription)
+        } else {
+            moreOptionsArrayList.add(startTranscription)
+        }
+        
+        moreOptionsArrayList.add(participantList)
 
-    bottomSheetDialog.setOnShowListener {
-        val bottomSheet = bottomSheetDialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
-        bottomSheet?.setBackgroundResource(android.R.color.transparent)
-    }
+        // Inflate the BottomSheet layout
+        val view = layoutInflater.inflate(R.layout.more_options_bottomsheet, null)
+        val listView = view.findViewById<ListView>(R.id.list_view_more_options)
 
-    bottomSheetDialog.show()
+        // Set the custom adapter
+        val arrayAdapter = MoreOptionsListAdapter(
+            this@GroupCallActivity,
+            R.layout.more_options_list_layout,
+            moreOptionsArrayList
+        )
+        listView.adapter = arrayAdapter
+
+        // Create and show the BottomSheetDialog
+        val bottomSheetDialog = BottomSheetDialog(this@GroupCallActivity, R.style.BottomSheetDialogTheme)
+        bottomSheetDialog.setContentView(view)
+
+        // Handle item clicks
+        listView.setOnItemClickListener { _, _, which, _ ->
+            when (which) {
+                0 -> { raisedHand() }
+                1 -> { toggleScreenSharing() }
+                2 -> { toggleRecording() }
+                3 -> { toggleTranscription() }
+                4 -> { openParticipantList() }
+            }
+            bottomSheetDialog.dismiss()
+        }
+
+        bottomSheetDialog.setOnShowListener {
+            val bottomSheet = bottomSheetDialog.findViewById<View>(com.google.android.material.R.id.design_bottom_sheet)
+            bottomSheet?.setBackgroundResource(android.R.color.transparent)
+        }
+
+        bottomSheetDialog.show()
     }
 
 
@@ -1525,5 +1525,62 @@ private fun showMoreOptionsDialog() {
         alertDialog.show()
     }
 
+    @SuppressLint("CutPasteId", "SetTextI18n")
+    private fun updatePresenter(participantId: String?) {
+        if (participantId == null) {
+            shareView!!.visibility = GONE
+            shareLayout!!.visibility = GONE
+            screenshareEnabled = false
+            return
+        } else {
+            screenshareEnabled = true
+        }
 
+        // find participant
+        val participant = meeting!!.participants[participantId] ?: return
+
+        // find share stream in participant
+        var shareStream: Stream? = null
+        for (stream: Stream in participant.streams.values) {
+            if ((stream.kind == "share")) {
+                shareStream = stream
+                break
+            }
+        }
+        if (shareStream == null) return
+        (findViewById<View>(R.id.tvScreenShareParticipantName) as TextView).text =
+            participant.displayName + " is presenting"
+        findViewById<View>(R.id.tvScreenShareParticipantName).visibility = VISIBLE
+        findViewById<View>(R.id.ivParticipantScreenShareNetwork).visibility = VISIBLE
+
+        // display share video
+        shareLayout!!.visibility = VISIBLE
+        shareView!!.visibility = VISIBLE
+        shareView!!.setZOrderMediaOverlay(true)
+        shareView!!.setScalingType(RendererCommon.ScalingType.SCALE_ASPECT_FIT)
+        val videoTrack = shareStream.track as VideoTrack
+        shareView!!.addTrack(videoTrack)
+        screenShareParticipantNameSnackbar = Snackbar.make(
+            findViewById(R.id.mainLayout), participant.displayName + " started presenting",
+            Snackbar.LENGTH_SHORT
+        )
+        styleSnackbar(screenShareParticipantNameSnackbar!!)
+        screenShareParticipantNameSnackbar!!.view.setOnClickListener { screenShareParticipantNameSnackbar!!.dismiss() }
+        screenShareParticipantNameSnackbar!!.show()
+
+        // listen for share stop event
+        participant.addEventListener(object : ParticipantEventListener() {
+            override fun onStreamDisabled(stream: Stream) {
+                if ((stream.kind == "share")) {
+                    val track: VideoTrack = stream.track as VideoTrack
+                    shareView!!.removeTrack()
+                    shareView!!.visibility = GONE
+                    shareLayout!!.visibility = GONE
+                    findViewById<View>(R.id.tvScreenShareParticipantName).visibility = GONE
+                    findViewById<View>(R.id.ivParticipantScreenShareNetwork).visibility = GONE
+                    localScreenShare = false
+                }
+            }
+        })
+    }
 }
