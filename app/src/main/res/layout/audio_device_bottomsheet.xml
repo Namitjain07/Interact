@@ -4,22 +4,21 @@
     android:layout_height="wrap_content"
     android:orientation="vertical"
     android:background="@drawable/bottom_sheet_background"
-    xmlns:tools="http://schemas.android.com/tools">
+    android:padding="16dp">
 
-    <View
-        android:id="@+id/handle"
-        android:layout_width="40dp"
-        android:layout_height="4dp"
-        android:layout_gravity="center"
-        android:layout_marginBottom="12dp"
-        android:layout_marginTop="12dp"
-        android:background="@drawable/bottom_sheet_handle" />
+    <TextView
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:text="Select Audio Device"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginBottom="16dp"/>
 
     <ListView
         android:id="@+id/list_view_audio_devices"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:divider="@color/md_grey_200"
-        android:dividerHeight="2dp"
-        tools:listitem="@layout/list_items_bottom_sheet"/>
+        android:divider="@android:color/darker_gray"
+        android:dividerHeight="0.5dp" />
+
 </LinearLayout>

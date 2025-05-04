@@ -50,6 +50,7 @@ import com.app.interact.adapter.ParticipantViewAdapter
 import com.app.interact.utils.HelperClass
 import com.app.interact.utils.ParticipantState
 import com.app.interact.R
+import com.app.interact.adapter.CameraDeviceListAdapter
 import live.videosdk.rtc.android.CustomStreamTrack
 import live.videosdk.rtc.android.Meeting
 import live.videosdk.rtc.android.Participant
@@ -791,7 +792,7 @@ class GroupCallActivity : AppCompatActivity() {
         // Leave meeting
         btnLeave!!.setOnClickListener { showLeaveOrEndDialog() }
         btnMore!!.setOnClickListener { showMoreOptionsDialog() }
-        btnSwitchCameraMode!!.setOnClickListener { meeting!!.changeWebcam() }
+        btnSwitchCameraMode!!.setOnClickListener { showCameraSelectionBottomSheet() }
 
         // Chat
         btnChat!!.setOnClickListener {
@@ -801,6 +802,79 @@ class GroupCallActivity : AppCompatActivity() {
         }
     }
 
+    private fun showCameraSelectionBottomSheet() {
+        try {
+            // Get all camera devices directly from VideoSDK
+            val cameraDeviceList = ArrayList<ListItem?>() // Changed to ArrayList<ListItem?>
+            
+            // Create options for Front and Back camera
+            cameraDeviceList.add(ListItem("Front Camera", null, false))
+            cameraDeviceList.add(ListItem("Back Camera", null, false))
+            
+            // Inflate the bottom sheet layout
+            val view = layoutInflater.inflate(R.layout.camera_device_bottomsheet, null)
+            val listView = view.findViewById<ListView>(R.id.list_view_camera_devices)
+            
+            // Set the adapter - now with matching type
+            val adapter = CameraDeviceListAdapter(
+                this,
+                R.layout.camera_device_list_layout,
+                cameraDeviceList
+            )
+            listView.adapter = adapter
+            
+            // Create and show bottom sheet
+            val bottomSheetDialog = BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
+            bottomSheetDialog.setContentView(view)
+            
+            // Handle item clicks
+            listView.setOnItemClickListener { _, _, position, _ ->
+                try {
+                    // Simple approach: position 0 is front, position 1 is back
+                    val cameraMode = if (position == 0) "front" else "back"
+                    
+                    if (webcamEnabled) {
+                        meeting!!.disableWebcam()
+                        
+                        // Short delay to ensure camera is properly disabled before re-enabling
+                        Handler(Looper.getMainLooper()).postDelayed({
+                            val videoTrack = VideoSDK.createCameraVideoTrack(
+                                "h720p_w960p",
+                                cameraMode,
+                                CustomStreamTrack.VideoMode.DETAIL,
+                                true,
+                                this@GroupCallActivity,
+                                null,
+                                null
+                            )
+                            meeting!!.enableWebcam(videoTrack)
+                        }, 500)
+                    }
+                    
+                    Toast.makeText(this, "Switching to ${cameraDeviceList[position]?.itemName}",
+                        Toast.LENGTH_SHORT).show()
+                } catch (e: Exception) {
+                    Log.e("CameraSwitch", "Error: ${e.message}")
+                    Toast.makeText(this, "Failed to switch camera", Toast.LENGTH_SHORT).show()
+                }
+                
+                bottomSheetDialog.dismiss()
+            }
+            
+            bottomSheetDialog.setOnShowListener {
+                val bottomSheet = bottomSheetDialog.findViewById<View>(
+                    com.google.android.material.R.id.design_bottom_sheet)
+                bottomSheet?.setBackgroundResource(android.R.color.transparent)
+            }
+            
+            bottomSheetDialog.show()
+        } catch (e: Exception) {
+            Log.e("CameraSwitch", "Error: ${e.message}")
+            Toast.makeText(this, "Failed to show camera options", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    // Add the missing toggleScreenSharing method
     private fun toggleScreenSharing() {
         if (!screenshareEnabled) {
             if (!localScreenShare) {
@@ -1248,14 +1322,15 @@ class GroupCallActivity : AppCompatActivity() {
         val pubSubMessageList = meeting!!.pubSub.subscribe("CHAT", pubSubMessageListener)
 
         //
-        messageAdapter =
-            MessageAdapter(this, pubSubMessageList, meeting!!)
+        messageAdapter = MessageAdapter(this, pubSubMessageList, meeting!!)
         messageRcv.adapter = messageAdapter
-        messageRcv.addOnLayoutChangeListener { _: View?, _: Int, _: Int, _: Int, _: Int, _: Int, _: Int, _: Int, _: Int ->
-            messageRcv.scrollToPosition(
-                messageAdapter!!.itemCount - 1
-            )
+        
+        // Fix the OnLayoutChangeListener signature to match the required parameters
+        messageRcv.addOnLayoutChangeListener { v: View?, left: Int, top: Int, right: Int, bottom: Int, 
+                                         oldLeft: Int, oldTop: Int, oldRight: Int, oldBottom: Int ->
+            messageRcv.scrollToPosition(messageAdapter!!.itemCount - 1)
         }
+        
         v3.findViewById<View>(R.id.btnSend).setOnClickListener {
             val message: String = etmessage!!.text.toString()
             if (message != "") {

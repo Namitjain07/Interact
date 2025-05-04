@@ -13,13 +13,17 @@ import android.view.View
 import android.view.WindowManager
 import android.widget.ImageButton
 import android.widget.LinearLayout
+import android.widget.ListView
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.ActionBar
 import androidx.appcompat.app.AppCompatActivity
 import androidx.appcompat.widget.Toolbar
+import com.google.android.material.bottomsheet.BottomSheetDialog
 import com.google.android.material.floatingactionbutton.FloatingActionButton
 import com.google.firebase.crashlytics.internal.Logger.TAG
+import com.app.interact.adapter.AudioDeviceListAdapter
+import com.app.interact.adapter.CameraDeviceListAdapter
 import com.app.interact.fragment.CreateMeetingFragment
 import com.app.interact.fragment.CreateOrJoinFragment
 import com.app.interact.fragment.JoinMeetingFragment
@@ -39,7 +43,9 @@ import org.webrtc.VideoCapturer
 import org.webrtc.VideoSource
 import org.webrtc.VideoTrack
 import androidx.core.content.ContextCompat
+import com.app.interact.modal.ListItem
 import org.webrtc.MediaStreamTrack
+import java.util.Locale
 
 class CreateOrJoinActivity : AppCompatActivity() {
     var isMicEnabled = false
@@ -157,7 +163,7 @@ class CreateOrJoinActivity : AppCompatActivity() {
         
         // Initialize audio device listener
         setAudioDeviceChangeListener()
-        
+
         checkPermissions()
         val fragContainer = findViewById<View>(R.id.fragContainer) as LinearLayout
         val ll = LinearLayout(this)
@@ -210,66 +216,196 @@ class CreateOrJoinActivity : AppCompatActivity() {
 
     private fun switchCamera() {
         try {
-            // Get the list of available camera devices
-            val videoDevices = VideoSDK.getVideoDevices()
-            if (videoDevices.isNotEmpty()) {
-                // Get current camera device
-                val currentDevice = VideoSDK.getSelectedVideoDevice()
-                
-                // Find a different camera (instead of using indexOf which might be causing the issue)
-                val otherDevice = videoDevices.find { it != currentDevice }
-                
-                if (otherDevice != null) {
-                    // Clean up existing camera resources
-                    if (videoTrack != null) {
-                        videoTrack?.track?.setEnabled(false)
-                        videoTrack = null
-                        joinView!!.removeTrack()
-                    }
-                    
-                    // Switch to the other camera
-                    VideoSDK.setSelectedVideoDevice(otherDevice)
-                    
-                    // Update the camera view with the new device
-                    updateCameraView(otherDevice)
-                    
-                    Toast.makeText(this, "Camera switched", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this, "No other camera available", Toast.LENGTH_SHORT).show()
-                }
-            } else {
-                Toast.makeText(this, "No cameras available", Toast.LENGTH_SHORT).show()
-            }
+            // Show camera selection bottom sheet
+            showCameraSelectionBottomSheet()
         } catch (e: Exception) {
             Log.e("CameraSwitch", "Error switching camera: ${e.message}")
             Toast.makeText(this, "Failed to switch camera", Toast.LENGTH_SHORT).show()
         }
     }
+    
+    private fun showCameraSelectionBottomSheet() {
+        try {
+            // Create a simple list of camera options with nullable ListItems
+            val cameraDeviceList: ArrayList<ListItem?> = ArrayList()
+            
+            // Add the camera options
+            cameraDeviceList.add(ListItem("Front Camera", null, false))
+            cameraDeviceList.add(ListItem("Back Camera", null, false))
+            
+            // Inflate the bottom sheet layout
+            val view = layoutInflater.inflate(R.layout.camera_device_bottomsheet, null)
+            val listView = view.findViewById<ListView>(R.id.list_view_camera_devices)
+            
+            // Set the adapter - now with matching type
+            val adapter = CameraDeviceListAdapter(
+                this,
+                R.layout.camera_device_list_layout,
+                cameraDeviceList
+            )
+            listView.adapter = adapter
+            
+            // Create and show bottom sheet
+            val bottomSheetDialog = BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
+            bottomSheetDialog.setContentView(view)
+            
+            // Handle item clicks
+            listView.setOnItemClickListener { _, _, position, _ ->
+                try {
+                    // Simple approach: position 0 is front, position 1 is back
+                    val cameraMode = if (position == 0) "front" else "back"
+                    
+                    // Clean up existing camera resources
+                    if (videoTrack != null) {
+                        videoTrack?.track?.setEnabled(false)
+                        videoTrack = null
+                        joinView?.removeTrack()
+                    }
+                    
+                    // Create a new video track with the selected camera
+                    if (isWebcamEnabled) {
+                        // Create new track with the specified camera
+                        videoTrack = VideoSDK.createCameraVideoTrack(
+                            "h720p_w960p",
+                            cameraMode,
+                            CustomStreamTrack.VideoMode.TEXT,
+                            true,
+                            this,
+                            null
+                        )
+                        
+                        // Add track to the view
+                        joinView?.addTrack(videoTrack!!.track as VideoTrack?)
+                    }
+                    
+                    Toast.makeText(this, "Camera switched to ${cameraDeviceList[position]?.itemName}", 
+                        Toast.LENGTH_SHORT).show()
+                    
+                } catch (e: Exception) {
+                    Log.e("CameraSwitch", "Error: ${e.message}")
+                    Toast.makeText(this, "Failed to switch camera", Toast.LENGTH_SHORT).show()
+                }
+                
+                bottomSheetDialog.dismiss()
+            }
+            
+            bottomSheetDialog.setOnShowListener {
+                val bottomSheet = bottomSheetDialog.findViewById<View>(
+                    com.google.android.material.R.id.design_bottom_sheet)
+                bottomSheet?.setBackgroundResource(android.R.color.transparent)
+            }
+            
+            bottomSheetDialog.show()
+        } catch (e: Exception) {
+            Log.e("CameraSwitch", "Error: ${e.message}")
+            Toast.makeText(this, "Failed to show camera options", Toast.LENGTH_SHORT).show()
+        }
+    }
 
     private fun showAudioOptions() {
         try {
-            // Get the list of available audio devices
-            val availableDevices = VideoSDK.getAudioDevices()
-            if (availableDevices.isNotEmpty()) {
-                // Get current audio device
-                val currentDevice = VideoSDK.getSelectedAudioDevice()
-                
-                // Find a different audio device
-                val otherDevice = availableDevices.find { it != currentDevice }
-                
-                if (otherDevice != null) {
-                    // Switch to the other audio device
-                    VideoSDK.setSelectedAudioDevice(otherDevice)
-                    Toast.makeText(this, "Switched to ${otherDevice.label}", Toast.LENGTH_SHORT).show()
-                } else {
-                    Toast.makeText(this, "No other audio device available", Toast.LENGTH_SHORT).show()
+            // Get actual available audio devices from the SDK
+            val availableAudioDevices = VideoSDK.getAudioDevices()
+            val audioDeviceList: ArrayList<ListItem?> = ArrayList()
+            val availableDeviceLabels = availableAudioDevices.map { it.label.uppercase() }
+            
+            // Add standard audio device options but mark them as available/unavailable
+            val speakerAvailable = "SPEAKER_PHONE" in availableDeviceLabels
+            val earpieceAvailable = "EARPIECE" in availableDeviceLabels
+            val bluetoothAvailable = "BLUETOOTH" in availableDeviceLabels
+            val wiredHeadsetAvailable = "WIRED_HEADSET" in availableDeviceLabels
+            
+            // Add each device with availability status
+            audioDeviceList.add(ListItem("Speaker phone ${if (!speakerAvailable) "(unavailable)" else ""}", null, false))
+            audioDeviceList.add(ListItem("Earpiece ${if (!earpieceAvailable) "(unavailable)" else ""}", null, false))
+            audioDeviceList.add(ListItem("Bluetooth ${if (!bluetoothAvailable) "(unavailable)" else ""}", null, false))
+            audioDeviceList.add(ListItem("Wired headset ${if (!wiredHeadsetAvailable) "(unavailable)" else ""}", null, false))
+            
+            // Inflate the bottom sheet layout
+            val view = layoutInflater.inflate(R.layout.audio_device_bottomsheet, null)
+            val listView = view.findViewById<ListView>(R.id.list_view_audio_devices)
+            
+            // Set the adapter
+            val adapter = AudioDeviceListAdapter(
+                this,
+                R.layout.audio_device_list_layout,
+                audioDeviceList
+            )
+            listView.adapter = adapter
+            
+            // Create and show the BottomSheetDialog
+            val bottomSheetDialog = BottomSheetDialog(this, R.style.BottomSheetDialogTheme)
+            bottomSheetDialog.setContentView(view)
+            
+            // Handle item clicks
+            listView.setOnItemClickListener { _, _, position, _ ->
+                try {
+                    // Check if the selected device is available
+                    val isAvailable = when(position) {
+                        0 -> speakerAvailable
+                        1 -> earpieceAvailable
+                        2 -> bluetoothAvailable
+                        3 -> wiredHeadsetAvailable
+                        else -> false
+                    }
+                    
+                    if (isAvailable) {
+                        // Create a new audio track
+                        val audioTrack = VideoSDK.createAudioTrack("high_quality", this)
+                        
+                        // Find the matching device from available devices
+                        val deviceLabel = when(position) {
+                            0 -> "SPEAKER_PHONE"
+                            1 -> "EARPIECE" 
+                            2 -> "BLUETOOTH"
+                            3 -> "WIRED_HEADSET"
+                            else -> ""
+                        }
+                        
+                        // Find the actual device to select
+                        val device = availableAudioDevices.find { it.label.uppercase() == deviceLabel }
+                        
+                        if (device != null) {
+                            // Set the selected device using the VideoSDK
+                            VideoSDK.setSelectedAudioDevice(device)
+                            
+                            // Update UI if needed
+                            Toast.makeText(this, "Switched to ${audioDeviceList[position]?.itemName?.split("(")?.get(0)?.trim()}", 
+                                Toast.LENGTH_SHORT).show()
+                        }
+                    } else {
+                        // Show error if device is unavailable
+                        Toast.makeText(this, "Audio device is not available", Toast.LENGTH_SHORT).show()
+                    }
+                } catch (e: Exception) {
+                    Log.e("AudioSwitch", "Error: ${e.message}")
+                    Toast.makeText(this, "Failed to switch audio device", Toast.LENGTH_SHORT).show()
                 }
-            } else {
-                Toast.makeText(this, "No audio devices available", Toast.LENGTH_SHORT).show()
+                
+                bottomSheetDialog.dismiss()
             }
+            
+            bottomSheetDialog.setOnShowListener {
+                val bottomSheet = bottomSheetDialog.findViewById<View>(
+                    com.google.android.material.R.id.design_bottom_sheet)
+                bottomSheet?.setBackgroundResource(android.R.color.transparent)
+            }
+            
+            bottomSheetDialog.show()
         } catch (e: Exception) {
-            Log.e("AudioSwitch", "Error switching audio device: ${e.message}")
-            Toast.makeText(this, "Failed to switch audio device", Toast.LENGTH_SHORT).show()
+            Log.e("AudioSwitch", "Error: ${e.message}")
+            Toast.makeText(this, "Failed to show audio options", Toast.LENGTH_SHORT).show()
+        }
+    }
+    
+    // Add this helper method to update the mic icon
+    private fun toggleMicIcon() {
+        if (isMicEnabled) {
+            btnMic!!.setImageResource(R.drawable.ic_mic_on)
+            changeFloatingActionButtonLayout(btnMic, true)
+        } else {
+            btnMic!!.setImageResource(R.drawable.ic_mic_off)
+            changeFloatingActionButtonLayout(btnMic, false)
         }
     }
 
