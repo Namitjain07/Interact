@@ -12,12 +12,10 @@
         android:id="@+id/toolbar"
         android:layout_width="match_parent"
         android:layout_height="?attr/actionBarSize"
-        android:background="@color/black"
-        app:contentInsetStartWithNavigation="0dp"
-        app:popupTheme="@style/Theme.Interact"
-        app:titleMarginStart="0dp"
+        android:background="@android:color/transparent"
         app:titleTextColor="@color/white"
-        app:menu="@menu/top_app_bar" />
+        app:contentInsetStart="0dp"
+        app:contentInsetEnd="0dp"/>
 
     <ScrollView
         android:layout_width="match_parent"

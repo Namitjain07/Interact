@@ -141,10 +141,11 @@ class GroupCallActivity : AppCompatActivity() {
         setContentView(R.layout.activity_group_call)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
 
-        //
         val toolbar = findViewById<Toolbar>(R.id.material_toolbar)
         toolbar.title = ""
+        toolbar.setBackgroundColor(Color.TRANSPARENT) // Set toolbar background transparent
         setSupportActionBar(toolbar)
+        supportActionBar?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT)) // Set ActionBar background transparent
 
         //
         btnLeave = findViewById(R.id.btnLeave)

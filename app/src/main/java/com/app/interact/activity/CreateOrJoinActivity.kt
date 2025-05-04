@@ -6,9 +6,9 @@ import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.ColorStateList
 import android.graphics.Color
+import android.graphics.drawable.ColorDrawable
 import android.os.Bundle
 import android.util.Log
-import android.view.MenuItem
 import android.view.View
 import android.view.WindowManager
 import android.widget.ImageButton
@@ -138,28 +138,30 @@ class CreateOrJoinActivity : AppCompatActivity() {
         VideoSDK.initialize(applicationContext)
         setContentView(R.layout.activity_create_or_join)
         window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+        
         toolbar = findViewById(R.id.toolbar)
         toolbar!!.title = ""
+        toolbar!!.setBackgroundColor(Color.TRANSPARENT) // Set toolbar background transparent
         setSupportActionBar(toolbar)
         actionBar = supportActionBar
+        actionBar?.setBackgroundDrawable(ColorDrawable(Color.TRANSPARENT)) // Set ActionBar background transparent
+        
         btnMic = findViewById(R.id.btnMic)
         btnWebcam = findViewById(R.id.btnWebcam)
         joinView = findViewById(R.id.joiningView)
         cameraOffText = findViewById(R.id.cameraoff)
 
-        // Add camera and audio buttons to the toolbar
-        btnSwitchCamera = ImageButton(this)
-        btnSwitchCamera!!.setImageResource(R.drawable.baseline_flip_camera_android_24)
-        btnSwitchCamera!!.setBackgroundColor(Color.TRANSPARENT)
+        // Add the toolbar layout instead of programmatically adding buttons
+        val toolbarItemsLayout = layoutInflater.inflate(R.layout.custom_toolbar_items, toolbar, false)
+        toolbar!!.addView(toolbarItemsLayout)
+        
+        // Get references to the buttons from the layout
+        btnSwitchCamera = toolbarItemsLayout.findViewById(R.id.btnSwitchCamera)
+        btnAudioOptions = toolbarItemsLayout.findViewById(R.id.btnAudioOptions)
+        
+        // Set click listeners
         btnSwitchCamera!!.setOnClickListener { switchCamera() }
-        
-        btnAudioOptions = ImageButton(this)
-        btnAudioOptions!!.setImageResource(R.drawable.baseline_volume_up_24)
-        btnAudioOptions!!.setBackgroundColor(Color.TRANSPARENT)
         btnAudioOptions!!.setOnClickListener { showAudioOptions() }
-        
-        toolbar!!.addView(btnAudioOptions)
-        toolbar!!.addView(btnSwitchCamera)
         
         // Initialize audio device listener
         setAudioDeviceChangeListener()
@@ -172,21 +174,6 @@ class CreateOrJoinActivity : AppCompatActivity() {
         fragContainer.addView(ll)
         btnMic!!.setOnClickListener { toggleMic() }
         btnWebcam!!.setOnClickListener { toggleWebcam() }
-    }
-
-    override fun onOptionsItemSelected(item: MenuItem): Boolean {
-        if (item.itemId == android.R.id.home) {
-            supportFragmentManager.addOnBackStackChangedListener {
-                if (supportFragmentManager.backStackEntryCount > 0) {
-                    actionBar!!.setDisplayHomeAsUpEnabled(true)
-                } else {
-                    actionBar!!.setDisplayHomeAsUpEnabled(false)
-                }
-                toolbar!!.invalidate()
-            }
-            supportFragmentManager.popBackStack()
-        }
-        return super.onOptionsItemSelected(item)
     }
 
     private var previousAvailableDevices: MutableList<String> = mutableListOf()
