@@ -1,6 +1,7 @@
 package com.app.interact.adapter
 
 import android.content.Context
+import android.graphics.Color
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
@@ -13,14 +14,15 @@ import com.app.interact.modal.ListItem
 class CameraDeviceListAdapter(
     context: Context,
     resource: Int,
-    objects: ArrayList<ListItem?>
+    objects: ArrayList<ListItem?>,
+    private val textColor: Int = Color.WHITE // Default to white text
 ) : ArrayAdapter<ListItem?>(context, resource, objects) {
 
     override fun getView(position: Int, convertView: View?, parent: ViewGroup): View {
         var view = convertView
         if (view == null) {
-            val inflater = context.getSystemService(Context.LAYOUT_INFLATER_SERVICE) as LayoutInflater
-            view = inflater.inflate(R.layout.camera_device_list_layout, parent, false)
+            val layoutInflater = LayoutInflater.from(context)
+            view = layoutInflater.inflate(R.layout.camera_device_list_layout, parent, false)
         }
 
         val item = getItem(position)
@@ -29,6 +31,7 @@ class CameraDeviceListAdapter(
 
         if (item != null) {
             tvDeviceName.text = item.itemName
+            tvDeviceName.setTextColor(textColor) // Set the text color here
             
             // If this item is the selected camera, show the check mark
             if (item.isSelected) {

@@ -237,11 +237,12 @@ class CreateOrJoinActivity : AppCompatActivity() {
             val view = layoutInflater.inflate(R.layout.camera_device_bottomsheet, null)
             val listView = view.findViewById<ListView>(R.id.list_view_camera_devices)
             
-            // Set the adapter - now with matching type
+            // Set the adapter with white text color
             val adapter = CameraDeviceListAdapter(
                 this,
                 R.layout.camera_device_list_layout,
-                cameraDeviceList
+                cameraDeviceList,
+                Color.WHITE // Explicitly set white color
             )
             listView.adapter = adapter
             

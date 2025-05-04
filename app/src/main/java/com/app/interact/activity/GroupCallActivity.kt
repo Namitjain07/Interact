@@ -805,7 +805,7 @@ class GroupCallActivity : AppCompatActivity() {
     private fun showCameraSelectionBottomSheet() {
         try {
             // Get all camera devices directly from VideoSDK
-            val cameraDeviceList = ArrayList<ListItem?>() // Changed to ArrayList<ListItem?>
+            val cameraDeviceList = ArrayList<ListItem?>()
             
             // Create options for Front and Back camera
             cameraDeviceList.add(ListItem("Front Camera", null, false))
@@ -815,11 +815,12 @@ class GroupCallActivity : AppCompatActivity() {
             val view = layoutInflater.inflate(R.layout.camera_device_bottomsheet, null)
             val listView = view.findViewById<ListView>(R.id.list_view_camera_devices)
             
-            // Set the adapter - now with matching type
+            // Set the adapter with white text color
             val adapter = CameraDeviceListAdapter(
                 this,
                 R.layout.camera_device_list_layout,
-                cameraDeviceList
+                cameraDeviceList,
+                Color.WHITE // Set white text color
             )
             listView.adapter = adapter
             

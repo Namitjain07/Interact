@@ -6,20 +6,29 @@
     android:background="@drawable/bottom_sheet_background"
     xmlns:tools="http://schemas.android.com/tools">
 
-    <View
-        android:id="@+id/handle"
-        android:layout_width="40dp"
-        android:layout_height="4dp"
-        android:layout_gravity="center"
-        android:layout_marginBottom="12dp"
-        android:layout_marginTop="12dp"
-        android:background="@drawable/bottom_sheet_handle" />
+    <!-- Add pill-shaped dragging handle -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:gravity="center_horizontal"
+        android:paddingTop="12dp"
+        android:paddingBottom="8dp">
+
+        <View
+            android:id="@+id/drag_handle"
+            android:layout_width="40dp"
+            android:layout_height="5dp"
+            android:background="@drawable/pill_shape_handle"
+            android:layout_gravity="center_horizontal" />
+    </LinearLayout>
 
     <ListView
         android:id="@+id/list_view_leave_options"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:divider="@color/md_grey_200"
-        android:dividerHeight="2dp"
+        android:divider="@android:color/darker_gray"
+        android:dividerHeight="0.5dp"
+        android:paddingBottom="16dp"
         tools:listitem="@layout/list_items_bottom_sheet"/>
 </LinearLayout>
