@@ -20,6 +20,8 @@
         android:textAllCaps="false"
         android:textSize="18sp"
         app:cornerRadius="50dp"
+        app:strokeWidth="2dp"
+        app:strokeColor="@color/md_grey_200"
         android:fontFamily="sans-serif-medium"
         android:textFontWeight="700"/>
 

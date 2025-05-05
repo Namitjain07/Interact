@@ -38,6 +38,8 @@
         app:cornerRadius="50dp"
         android:padding="16dp"
         android:fontFamily="sans-serif-medium"
+        app:strokeWidth="2dp"
+        app:strokeColor="@color/md_grey_200"
         android:textFontWeight="700"
         />
 

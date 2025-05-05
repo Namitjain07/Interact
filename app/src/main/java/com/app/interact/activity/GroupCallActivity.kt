@@ -73,6 +73,7 @@ import live.videosdk.rtc.android.lib.transcription.TranscriptionConfig
 import live.videosdk.rtc.android.lib.transcription.SummaryConfig
 import live.videosdk.rtc.android.lib.transcription.TranscriptionState
 import live.videosdk.rtc.android.lib.transcription.TranscriptionText
+import live.videosdk.rtc.android.lib.transcription.PostTranscriptionConfig
 import android.widget.ScrollView
 import androidx.core.widget.NestedScrollView
 
@@ -134,6 +135,8 @@ class GroupCallActivity : AppCompatActivity() {
     private var transcriptionTextView: TextView? = null
     private var transcriptionScrollView: NestedScrollView? = null
     private var transcriptionStatusSnackbar: Snackbar? = null
+    private var postTranscriptionEnabled = false  // Flag to track post-transcription status
+    private var postTranscriptionData: JSONObject? = null  // Store fetched post-transcription data
 
     @SuppressLint("MissingInflatedId")
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -1189,6 +1192,14 @@ class GroupCallActivity : AppCompatActivity() {
         
         if (recording) {
             moreOptionsArrayList.add(stopRecording)
+            if (postTranscriptionEnabled) {
+                // Add an option to check the post-transcription status
+                val checkTranscriptionStatus = ListItem(
+                    "Check post-transcription status",
+                    AppCompatResources.getDrawable(this@GroupCallActivity, R.drawable.ic_transcription)!!
+                )
+                moreOptionsArrayList.add(checkTranscriptionStatus)
+            }
         } else {
             moreOptionsArrayList.add(startRecording)
         }
@@ -1219,12 +1230,14 @@ class GroupCallActivity : AppCompatActivity() {
 
         // Handle item clicks
         listView.setOnItemClickListener { _, _, which, _ ->
-            when (which) {
-                0 -> { raisedHand() }
-                1 -> { toggleScreenSharing() }
-                2 -> { toggleRecording() }
-                3 -> { toggleTranscription() }
-                4 -> { openParticipantList() }
+            val selectedItem = moreOptionsArrayList[which].itemName
+            when {
+                selectedItem.contains("Raise Hand") -> { raisedHand() }
+                selectedItem.contains("screen share") -> { toggleScreenSharing() }
+                selectedItem.contains("recording") -> { toggleRecording() }
+                selectedItem.contains("transcription") -> { toggleTranscription() }
+                selectedItem.contains("Check post-transcription") -> { fetchPostTranscriptionData() }
+                selectedItem.contains("Participants") -> { openParticipantList() }
             }
             bottomSheetDialog.dismiss()
         }
@@ -1253,9 +1266,104 @@ class GroupCallActivity : AppCompatActivity() {
             JsonUtils.jsonPut(config, "layout", layout)
             JsonUtils.jsonPut(config, "orientation", "portrait")
             JsonUtils.jsonPut(config, "theme", "DARK")
-            meeting!!.startRecording(null,null,config,null)
+            
+            // Configure post-transcription and summary
+//            val prompt = "Write summary in sections like Title, Agenda, Speakers, Action Items, Outlines, Notes and Summary"
+            val prompt = "First analyse what different participants in meeting is saying print it exactly line by line with their name make sure in the same language as well and then summary in sections like Title, Agenda, Speakers, Action Items, Outlines, Notes and Summary"
+            val summaryConfig = SummaryConfig(true, prompt)
+            val modelId = "raman_v1"
+            val postTranscriptionConfig = PostTranscriptionConfig(true, summaryConfig, modelId)
+            
+            // Start recording with post-transcription
+            postTranscriptionEnabled = true
+            meeting!!.startRecording(null, null, config, postTranscriptionConfig)
+            
+            Toast.makeText(
+                this@GroupCallActivity,
+                "Recording started with post-transcription enabled",
+                Toast.LENGTH_SHORT
+            ).show()
         } else {
             meeting!!.stopRecording()
+            
+            if (postTranscriptionEnabled) {
+                Toast.makeText(
+                    this@GroupCallActivity,
+                    "Post-transcription is being processed and will be available soon",
+                    Toast.LENGTH_LONG
+                ).show()
+                
+                // Schedule a fetch attempt after a delay
+                Handler(Looper.getMainLooper()).postDelayed({
+                    if (!isDestroyed) {
+                        fetchPostTranscriptionData()
+                    }
+                }, 30000) // 30 seconds delay before first attempt
+            }
+        }
+    }
+    
+    private fun fetchPostTranscriptionData() {
+        // This method would typically call an API to fetch post-transcription data
+        // For demo purposes, we'll show a toast message
+        
+        if (!isDestroyed && postTranscriptionEnabled) {
+            Toast.makeText(
+                this@GroupCallActivity,
+                "Fetching post-transcription data...",
+                Toast.LENGTH_SHORT
+            ).show()
+            
+            // In a real implementation, you would make an API call here
+            // For example, using a NetworkUtils method:
+            // NetworkUtils(this).fetchPostTranscriptions(meeting!!.meetingId, token, object : ResponseListener<JSONObject> {
+            //     override fun onResponse(data: JSONObject?) {
+            //         if (data != null) {
+            //             postTranscriptionData = data
+            //             showPostTranscriptionDialog()
+            //         }
+            //     }
+            // })
+            
+            // For now, let's simulate a fetching process with a delay
+            Handler(Looper.getMainLooper()).postDelayed({
+                if (!isDestroyed) {
+                    showPostTranscriptionDialog()
+                }
+            }, 3000)
+        }
+    }
+    
+    private fun showPostTranscriptionDialog() {
+        if (!isDestroyed) {
+            val alertDialog = MaterialAlertDialogBuilder(this@GroupCallActivity, R.style.AlertDialogCustom).create()
+            alertDialog.setCanceledOnTouchOutside(false)
+            val inflater = layoutInflater
+            val dialogView = inflater.inflate(R.layout.alert_dialog_layout, null)
+            alertDialog.setView(dialogView)
+            
+            val title = dialogView.findViewById<TextView>(R.id.title)
+            title.text = "Post-Transcription Status"
+            
+            val message = dialogView.findViewById<TextView>(R.id.message)
+            message.text = "Your meeting transcription is being processed. " +
+                    "You can access the transcription and summary once processing is complete. " +
+                    "This may take several minutes depending on the meeting length."
+            
+            val positiveButton = dialogView.findViewById<Button>(R.id.positiveBtn)
+            positiveButton.text = "OK"
+            positiveButton.setOnClickListener {
+                alertDialog.dismiss()
+            }
+            
+            val negativeButton = dialogView.findViewById<Button>(R.id.negativeBtn)
+            negativeButton.text = "Check Again"
+            negativeButton.setOnClickListener {
+                fetchPostTranscriptionData()
+                alertDialog.dismiss()
+            }
+            
+            alertDialog.show()
         }
     }
 
@@ -1277,6 +1385,7 @@ class GroupCallActivity : AppCompatActivity() {
             shareLayout!!.visibility = GONE
             shareView!!.releaseSurfaceViewRenderer()
         }
+        postTranscriptionData = null
         super.onDestroy()
     }
 

@@ -152,7 +152,15 @@ class CreateOrJoinActivity : AppCompatActivity() {
         cameraOffText = findViewById(R.id.cameraoff)
 
         // Add the toolbar layout instead of programmatically adding buttons
-        val toolbarItemsLayout = layoutInflater.inflate(R.layout.custom_toolbar_items, toolbar, false)
+        val toolbarItemsLayout = layoutInflater.inflate(R.layout.custom_toolbar_items, null)
+        
+        // Set layout parameters to ensure full width
+        val layoutParams = Toolbar.LayoutParams(
+            Toolbar.LayoutParams.MATCH_PARENT,
+            Toolbar.LayoutParams.WRAP_CONTENT
+        )
+        toolbarItemsLayout.layoutParams = layoutParams
+        
         toolbar!!.addView(toolbarItemsLayout)
         
         // Get references to the buttons from the layout
@@ -403,6 +411,11 @@ class CreateOrJoinActivity : AppCompatActivity() {
         ft.replace(R.id.fragContainer, CreateMeetingFragment(), "CreateMeetingFragment")
         ft.addToBackStack("CreateOrJoinFragment")
         ft.commit()
+        
+        // Ensure toolbar is fully visible after fragment transaction
+        toolbar?.post {
+            toolbar?.invalidate()
+        }
     }
 
     fun joinMeetingFragment() {
@@ -411,11 +424,20 @@ class CreateOrJoinActivity : AppCompatActivity() {
         ft.replace(R.id.fragContainer, JoinMeetingFragment(), "JoinMeetingFragment")
         ft.addToBackStack("CreateOrJoinFragment")
         ft.commit()
+        
+        // Ensure toolbar is fully visible after fragment transaction
+        toolbar?.post {
+            toolbar?.invalidate()
+        }
     }
 
     private fun setActionBar() {
         if (actionBar != null) {
             actionBar!!.setDisplayHomeAsUpEnabled(true)
+            
+            // Make sure content insets are correctly set
+            toolbar?.contentInsetStartWithNavigation = 0
+            toolbar?.setContentInsetsRelative(0, 0)
         } else {
             throw NullPointerException("Something went wrong")
         }
