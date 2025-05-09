@@ -34,7 +34,7 @@ This is a **group video calling Android application** developed in **Android Stu
 app/
  ├── activity/
  │   ├── CreateOrJoinActivity.kt
- │   ├── GroupCallActivity.kt          # Replaces OneToOneCallActivity
+ │   ├── GroupCallActivity.kt          # This Replaces OneToOneCallActivity
  │
  ├── fragment/
  │   ├── CreateMeetingFragment.kt
