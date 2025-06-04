@@ -1,5 +1,5 @@
 [versions]
-agp = "8.9.2"
+agp = "8.10.1"
 androidGifDrawable = "1.2.22"
 androidNetworking = "1.0.2"
 androidNetworkingVersion = "1.0.2"
