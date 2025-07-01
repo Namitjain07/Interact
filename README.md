@@ -15,10 +15,12 @@ A powerful **group video calling Android app** built using **VideoSDK**, offerin
 
 ---
 
-## 🎥 Demo
 
-https://user-images.githubusercontent.com/your-demo-video-link.mp4  
-📌 *[Replace with actual video link]*
+## 📽️ Demo Video
+
+[![Watch the Demo](https://img.youtube.com/vi/aiEc0jrBn8k/0.jpg)](https://youtu.be/aiEc0jrBn8k)
+
+🔗 [Click here to view the demo on YouTube](https://youtu.be/aiEc0jrBn8k)
 
 ---
 
